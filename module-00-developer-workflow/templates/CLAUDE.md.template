@@ -1,0 +1,79 @@
+# CLAUDE.md
+
+> Instrucciones específicas del proyecto para Claude.
+> Se cargan automáticamente en Claude Code al abrir este directorio.
+
+---
+
+## Stack y versiones
+
+- Runtime: [Python 3.11 / Node 20 / Go 1.22]
+- Framework: [FastAPI / Express / Gin]
+- DB: [PostgreSQL 16]
+- Tests: [pytest / vitest / go test]
+- Linter/Formatter: [ruff / eslint+prettier / gofmt]
+
+---
+
+## Convenciones de código
+
+- [Ej: funciones de dominio siempre retornan `Result[T, Error]`, nunca lanzan excepciones]
+- [Ej: nombres de variables en inglés, comentarios en español]
+- [Ej: no usar `Any` en type hints sin un comentario explicando por qué]
+- [Ej: imports agrupados: stdlib → third-party → local]
+
+---
+
+## Testing
+
+- Los tests unitarios van en `tests/unit/`
+- Los tests de integración van en `tests/integration/` y necesitan la DB corriendo
+- Cobertura mínima: 80% — el CI falla si baja
+- Fixtures compartidas en `conftest.py` — no duplicar setup en cada test
+- **Nunca mockear la DB en tests de integración** — usar la real con transacciones que hacen rollback
+
+---
+
+## Workflow de desarrollo
+
+1. Antes de codear: asegurate de entender el requerimiento (grill si hace falta)
+2. Escribí los tests primero
+3. Implementá el mínimo para que pasen
+4. Corré `[comando de tests]` antes de proponer el cambio
+5. Actualizá CONTEXT.md si agregaste nuevos conceptos de dominio
+
+---
+
+## Qué evitar en este repo
+
+- No agregar dependencias sin actualizar `[requirements.txt / package.json / go.mod]`
+- No poner lógica de negocio en los handlers HTTP
+- No commitear archivos `.env` o credenciales
+- No usar variables globales como estado mutable
+- No [tu regla más importante]
+
+---
+
+## Comandos útiles
+
+```bash
+# Correr tests
+[comando]
+
+# Correr con coverage
+[comando]
+
+# Linting
+[comando]
+
+# Levantar en local
+[comando]
+```
+
+---
+
+## Referencias
+
+- CONTEXT.md: definiciones del dominio
+- docs/adr/: decisiones de arquitectura
+- docs/onboarding.md: setup inicial del proyecto

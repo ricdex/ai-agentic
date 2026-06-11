@@ -1,0 +1,39 @@
+## Plan de implementación: Sistema de cupones de descuento
+
+### Feature
+Agregar soporte para cupones de descuento en el proceso de checkout.
+El cliente ingresa un código de cupón al confirmar el Order, y el precio final
+refleja el descuento correspondiente.
+
+### Entidades nuevas
+- `Coupon`: código único, porcentaje de descuento (1-100), fecha de vencimiento (opcional),
+  usos máximos (None = ilimitado)
+- `CouponUsage`: registro de uso — qué cupón usó qué Order, cuándo
+
+### Reglas de negocio (acordadas en el grill)
+1. El descuento se aplica sobre el precio congelado (post-confirmación)
+   Razón: ADR-001 establece que el precio se congela al confirmar — el descuento
+   no rompe esa regla, se aplica encima del precio ya fijo
+2. Un cupón solo puede usarse una vez por cliente (validar por customer_id)
+3. Si el cupón vence entre que el usuario lo ingresa y se procesa el pago,
+   la orden continúa sin descuento — no bloquear el checkout
+   (fail-safe consciente: mejor perder el descuento que perder la venta)
+4. Las notificaciones de "cupón aplicado" son async (consistent con ADR-002)
+5. Los cupones vencidos o agotados no lanzan excepción — retornan el precio original
+
+### Archivos a crear/modificar
+- src/coupons.py        ← nuevo módulo: Coupon, CouponUsage, CouponValidator
+- src/orders.py        ← agregar apply_coupon(coupon_code, registry) en Order
+- tests/test_coupons.py ← tests del CouponValidator (casos borde: expirado, agotado, inválido)
+- tests/test_orders.py ← nuevos tests de apply_coupon en Order
+
+### Decisiones de diseño
+- CouponValidator como clase separada de Order (Single Responsibility)
+- CouponRegistry como protocolo/interfaz — no acoplarse a una DB específica
+- Falló-seguro en expiración: loguear y continuar sin descuento, no lanzar excepción
+- Repository pattern para CouponUsage (consistente con adaptadores existentes)
+
+### Qué NO entra en esta feature
+- UI para gestión de cupones (admin)
+- Generación automática de códigos
+- Descuentos por categoría de producto (es una feature distinta)

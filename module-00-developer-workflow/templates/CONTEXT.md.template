@@ -1,0 +1,104 @@
+# CONTEXT.md
+
+> Este archivo define el lenguaje del dominio del proyecto.
+> Claude lo lee automáticamente — mantenerlo actualizado es tan importante como el código.
+
+---
+
+## Qué hace este sistema
+
+[Una o dos oraciones. Qué problema resuelve. Para quién.]
+
+Ejemplo: *Sistema de gestión de pedidos para marketplaces B2B. Permite a proveedores publicar catálogos y a compradores realizar órdenes con aprobación multi-nivel.*
+
+---
+
+## Conceptos clave del dominio
+
+> Definí los términos que usás en el código. Si hay ambigüedad entre términos, resuélvela acá.
+
+| Término | Definición | Distinto de... |
+|---|---|---|
+| **Order** | Una intención de compra confirmada con precio congelado | Cart (pre-compra), Invoice (post-pago) |
+| **Cart** | Estado temporal antes del checkout | Order (no tiene precio congelado ni compromiso) |
+| **[tu término]** | [definición] | [si aplica] |
+
+---
+
+## Reglas del dominio
+
+> Las invariantes del negocio que el código debe respetar.
+
+- Un `Order` en estado `FULFILLED` no puede modificarse
+- El precio se congela al momento de creación del Order
+- Un `User` puede tener múltiples `Account` pero solo una activa a la vez
+- [agregá las tuyas]
+
+---
+
+## Arquitectura en 5 líneas
+
+```
+Entrada:   [REST API / Events / CLI / Webhook]
+Dominio:   [lógica de negocio — sin dependencias externas]
+Casos uso: [orquestación — coordina dominio + infra]
+Infra:     [DB, colas, storage, servicios externos]
+Salida:    [respuestas HTTP / eventos publicados]
+```
+
+---
+
+## Patrones de código que usamos
+
+- **Handler thin**: valida input → llama caso de uso → retorna respuesta. Sin lógica de negocio.
+- **Domain puro**: los objetos de dominio no importan nada de infra (sin DB, sin HTTP, sin env vars)
+- **Result type**: las funciones de dominio retornan `Result[T, DomainError]`, no lanzan excepciones
+- [los tuyos]
+
+---
+
+## Lo que conscientemente NO hacemos
+
+> Decisiones de diseño que podrían parecer obvias pero que descartamos.
+
+- No usamos `X` porque [razón — o referencia al ADR]
+- No ponemos lógica de negocio en las queries SQL
+- [los tuyos]
+
+---
+
+## Estructura de directorios
+
+```
+src/
+  domain/       ← reglas del negocio, sin dependencias externas
+  usecases/     ← orquestación, casos de uso
+  infra/        ← DB, HTTP, colas
+  api/          ← handlers HTTP (thin)
+tests/
+  unit/         ← testean dominio y casos de uso
+  integration/  ← testean infra con dependencias reales
+docs/
+  adr/          ← decisiones de arquitectura
+```
+
+---
+
+## Stack
+
+| Componente | Tecnología | Notas |
+|---|---|---|
+| Runtime | | |
+| Framework API | | |
+| Base de datos | | |
+| Queue | | |
+| Tests | | |
+| CI/CD | | |
+
+---
+
+## Glosario adicional
+
+> Términos del negocio que aparecen en el código y pueden confundir.
+
+- **[término de negocio]**: [qué significa en este contexto]

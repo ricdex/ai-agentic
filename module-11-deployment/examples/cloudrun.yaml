@@ -1,0 +1,54 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: autopilot-agent-worker
+  annotations:
+    run.googleapis.com/ingress: internal  # solo acceso interno
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "5"
+        run.googleapis.com/cpu-throttling: "false"  # CPU siempre disponible (worker)
+    spec:
+      serviceAccountName: autopilot-agent@PROJECT_ID.iam.gserviceaccount.com
+      timeoutSeconds: 3600  # 1 hora máximo por request
+      containers:
+        - image: gcr.io/PROJECT_ID/autopilot-agent:latest
+          resources:
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          env:
+            # Secretos desde GCP Secret Manager
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: anthropic-api-key
+                  key: latest
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token
+                  key: latest
+            # Config no sensible
+            - name: REDIS_URL
+              value: "redis://10.0.0.5:6379"  # IP interna de Redis en VPC
+            - name: TEST_RUNNER_URL
+              value: "http://test-runner:8080"
+            - name: LOG_LEVEL
+              value: "INFO"
+          # Health check para Cloud Run
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
