@@ -138,10 +138,15 @@ Una vez configurado, Claude Code puede usar las herramientas del servidor direct
 
 ---
 
-## Ejemplos de código
+## Ejemplos con output
 
-- [`01_mcp_server.py`](./examples/01_mcp_server.py) — Servidor MCP mínimo con herramientas de búsqueda de código
-- [`02_mcp_client.py`](./examples/02_mcp_client.py) — Cliente que conecta con Claude usando un servidor MCP
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — MCP Server mínimo](./EXAMPLES.md#ejemplo-1--mcp-server-mínimo) | Server con 3 tools; intercambio JSON-RPC real entre cliente y servidor |
+| [02 — MCP Client con Claude](./EXAMPLES.md#ejemplo-2--mcp-client-conectar-claude-con-el-servidor) | Claude descubre las tools del server y las usa sin código extra |
+| [03 — Configurar en Claude Code](./EXAMPLES.md#ejemplo-3--configurar-el-servidor-en-claude-code) | settings.json para registrar servers de GitHub, Postgres y código propio |
 
 ---
 

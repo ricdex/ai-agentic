@@ -1,6 +1,6 @@
 # Módulo 0 — Developer Workflow AI-First
 
-> "El AI no es tu asistente de escritura. Es tu par de trabajo. Vos diseñás, él ejecuta. Pero para ejecutar bien, necesita contexto."
+> "El agente es el developer que vive en el repo. Es el único que lo toca. Tu trabajo no es escribir código — es darle todo lo que necesita para hacerlo bien: qué hacer, cómo comportarse, cómo validar, cómo probar y cómo solucionar bugs."
 
 Este módulo no es teórico. Es la configuración de cómo trabajás todos los días.
 Los hábitos que instala acá son el 80% del valor — los agentes autónomos del resto del curso los asumen como base.
@@ -9,15 +9,17 @@ Los hábitos que instala acá son el 80% del valor — los agentes autónomos de
 
 ## El cambio de mentalidad
 
-| Workflow tradicional | Workflow AI-first |
-|---|---|
-| "Escribime esta función" | El AI entiende el dominio antes de codear |
-| Empezar a codear y ver qué sale | Clarificar el diseño primero (grill) |
-| Debuggear al azar con prints | Diagnóstico sistemático en 6 fases |
-| Copiar contexto manualmente entre sesiones | Contexto persistente en archivos (`CONTEXT.md`, ADRs) |
-| Implementar y escribir tests después | Tests primero, siempre (TDD) |
+Tratá al agente como a un developer que se incorpora al repo y va a vivir ahí adentro — no como un autocompletado al que le dictás líneas. Un developer nuevo necesita, antes de tocar código, las mismas cinco cosas que un agente:
 
-El AI-first no significa "dejar que el AI haga todo". Significa **estructurar el trabajo para que el AI pueda hacer más con menos fricción** — y que vos puedas confiar en lo que produce.
+| Necesidad del developer | Sin esto... | Con el workflow de este módulo |
+|---|---|---|
+| **Qué hacer** | Adivina el alcance de la feature, sobre-construye o sub-construye | El grill (`02`) clarifica el plan contra `CONTEXT.md` y los ADRs antes de escribir código |
+| **Cómo comportarse** | Cada cambio tiene un estilo distinto, reinventa convenciones | `CLAUDE.md` fija las convenciones una sola vez (`00`), el scaffold (`03`) las aplica a la estructura |
+| **Cómo validar** | "Funciona en mi máquina", nadie sabe si está realmente listo | Criterio pasa/falla explícito: pytest real corriendo en cada ciclo, no una afirmación |
+| **Cómo probar** | Tests escritos después, a las apuradas, cubren lo que ya se implementó | TDD en ciclos verticales (`04`) — el test define el comportamiento antes del código |
+| **Cómo solucionar bugs** | Debugging al azar con prints, fix sin entender la causa | Diagnóstico sistemático en 6 fases (`05`) |
+
+El AI-first no significa "dejar que el AI haga todo". Significa **darle al agente, de entrada, todo lo que un developer necesitaría el primer día en el repo** — y que vos puedas confiar en lo que produce porque esas reglas quedaron escritas, no en tu cabeza.
 
 ---
 
@@ -44,8 +46,8 @@ flowchart TD
     First -->|No| TDD{"Implementar con TDD"}
     Scaffold --> TDD
 
-    TDD -->|Opcion A - automatizado| A["04 · tdd_agent.py<br/>RED - GREEN - REFACTOR"]
-    TDD -->|Opcion B - manual| B["Claude Code<br/>RED - GREEN - REFACTOR"]
+    TDD -->|Opcion A - automatizado| A["04 · tdd_agent.py<br/>ciclos RED-GREEN por comportamiento<br/>REFACTOR final"]
+    TDD -->|Opcion B - manual| B["Claude Code<br/>ciclos RED-GREEN por comportamiento<br/>REFACTOR final"]
 
     A & B --> OK([Tests pasan])
 
@@ -71,6 +73,25 @@ flowchart TD
     class WC,WCL,Rev doc
     class ADR adr
 ```
+
+---
+
+## El módulo como Harness
+
+> Harness = Instrucciones + Herramientas + Entorno + Estado + Retroalimentación
+> — [Lecture 02: What a Harness Actually Is](https://walkinglabs.github.io/learn-harness-engineering/es/lectures/lecture-02-what-a-harness-actually-is/)
+
+Es el mismo "developer que vive en el repo" de más arriba, visto desde otro ángulo: en vez de las 5 necesidades del developer, son los 5 subsistemas de infraestructura que se las dan. Todo lo que armamos en este módulo es infraestructura alrededor del modelo, no el modelo en sí. Así mapean los 5 subsistemas del harness contra los pasos 00-07:
+
+| Subsistema | Qué cubre acá | Paso(s) |
+|---|---|---|
+| **Instrucciones** | `CONTEXT.md` (vocabulario de dominio), `CLAUDE.md` (convenciones), ADRs (el "por qué") | 00, 01 |
+| **Retroalimentación** | Criterio pasa/falla explícito: pytest real en cada ciclo RED-GREEN, test de regresión al final del diagnóstico | 04, 05 |
+| **Estado** | Traspaso de contexto comprimido entre sesiones/agentes (`handoff.json`: completado, decisiones, pendiente) | 06 |
+| **Herramientas** | *No se trata como subsistema explícito.* Se asume que el agente ya tiene acceso (leer archivos, correr pytest) — no hay una sección que defina qué herramientas necesita y con qué privilegio mínimo | — |
+| **Entorno** | *Parcial.* El scaffold genera `pyproject.toml`, pero no se enmarca como "estado reproducible" (versiones lockeadas, mismo entorno entre sesiones) | 03 (parcial) |
+
+**Por qué importa esta vista:** Instrucciones y Retroalimentación son, según la lección, los de mayor ROI — y son justo los que este módulo más desarrolla (`grill_before_code.py` y el ciclo TDD). Herramientas y Entorno quedan como huecos abiertos: si en tu proyecto el agente falla por acceso insuficiente a comandos, o por que el entorno no es reproducible entre sesiones, esos son los subsistemas a reforzar — no el modelo.
 
 ---
 
@@ -201,14 +222,19 @@ python grill_before_code.py "agregar sistema de cupones de descuento"
 
 El script busca automáticamente `CONTEXT.md`, `CLAUDE.md` y `docs/adr/*.md` subiendo hasta 4 niveles desde el directorio actual.
 
-**Resultado:** sesión interactiva donde el AI hace preguntas específicas del dominio (no genéricas) y al final produce un plan de implementación.
+**Resultado:** sesión interactiva donde el AI hace preguntas específicas del dominio (no genéricas), **propone su respuesta recomendada para cada una**, y al final produce un plan de implementación.
 
 ```
 [Q1] El precio se congela al confirmar (ADR-001). ¿El descuento del cupón
      se aplica antes o después de congelar el precio?
+     Recomendación: antes de congelar — así el precio congelado ya incluye
+     el descuento y no hay recálculo posterior (consistente con ADR-001).
+
+Tu respuesta (Enter = aceptar recomendación):
 
 [Q2] Según ADR-002, las notificaciones son async. ¿El evento "cupón aplicado"
      también va por la misma cola o tiene canal propio?
+     Recomendación: misma cola — no hay requisito de latencia distinto.
 
 ...
 
@@ -217,6 +243,8 @@ Archivos a crear: src/coupons.py, tests/test_coupons.py
 Archivos a modificar: src/orders.py
 Reglas: descuento sobre precio congelado, fail-safe en expiración...
 ```
+
+**Cómo responder:** Enter acepta la recomendación del agente; cualquier texto la corrige. La recomendación está justificada con el contexto del proyecto — si el agente recomienda algo que contradice una decisión tuya no documentada, esa es la señal de que falta un ADR.
 
 **Si el grill reveló una decisión arquitectural no obvia → escribir un ADR antes de seguir.**
 
@@ -301,6 +329,28 @@ output/e-commerce/
 
 **Ideal para:** aprender el ciclo TDD, specs bien definidas, módulos aislados sin dependencias complejas.
 
+**Cómo funciona — ciclos verticales (tracer bullets):**
+
+El agente NO escribe todos los tests primero y después toda la implementación. Eso es *horizontal slicing* y produce tests malos: tests escritos en bloque testean comportamiento *imaginado* (la forma de las firmas y estructuras), no comportamiento *real*. En su lugar, el agente trabaja en **ciclos verticales** — un comportamiento por ciclo:
+
+```
+FASE PLAN     la spec se descompone en comportamientos observables, ordenados
+              del más simple al más complejo. El primero es el tracer bullet:
+              el caso mínimo que prueba el camino completo de punta a punta.
+
+CICLO i       (uno por comportamiento)
+  RED         escribe UN test para ese comportamiento → corre pytest → debe FALLAR
+              (si pasa sin implementar, el comportamiento ya estaba cubierto
+               y el ciclo se omite)
+  GREEN       escribe el mínimo código para que TODOS los tests pasen
+              (los de ciclos anteriores + el nuevo) → corre pytest → verde
+
+FASE REFACTOR única y al final, con toda la suite en verde. Si un refactor
+              rompe los tests, el cambio se revierte automáticamente.
+```
+
+Cada test se escribe sabiendo lo que enseñó el ciclo anterior — el diseño emerge de a un paso, en vez de comprometerse a una estructura de tests antes de entender la implementación.
+
 **Comando:**
 
 ```bash
@@ -309,18 +359,33 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 
 # Con la spec de ejemplo (BankAccount):
 python tdd_agent.py
+```
 
-# El agente hace el ciclo completo sin intervención:
-#   RED:     escribe los tests (todos fallan)
-#   GREEN:   escribe el mínimo código para que pasen
-#   REFACTOR: mejora el código sin romper tests
+**Output de ejemplo:**
+
+```
+--- FASE PLAN: comportamientos a implementar ---
+  1. la cuenta se inicializa con balance 0 por defecto  ← tracer bullet
+  2. depositar incrementa el balance
+  3. depositar monto inválido lanza ValueError
+  ...
+
+--- CICLO 1/6: la cuenta se inicializa con balance 0 por defecto ---
+  RED:   test_new_account_has_zero_balance → falla ✓
+  GREEN: bank_account.py → todos los tests pasan ✓
+
+--- CICLO 2/6: depositar incrementa el balance ---
+  RED:   test_deposit_increases_balance → falla ✓
+  GREEN: bank_account.py → todos los tests pasan ✓
+...
+--- FASE REFACTOR: mejorar sin romper ---
 ```
 
 **Resultado:** dos archivos en `./output/`:
 
 ```
 output/
-├── test_bank_account.py   ← tests exhaustivos (casos normales, borde, error)
+├── test_bank_account.py   ← un test por comportamiento, acumulados ciclo a ciclo
 └── bank_account.py        ← implementación mínima que los pasa
 ```
 
@@ -336,13 +401,15 @@ claude /ruta/a/tu/proyecto
 
 # 2. Pegás el plan del grill como contexto inicial:
 "Tengo este plan del grill: [pegás el plan]
- Arrancamos con el ciclo TDD. Primero escribí los tests para CouponValidator."
+ Implementemos con TDD en ciclos verticales: un comportamiento por vez.
+ Arrancá con el tracer bullet — UN test para el caso más simple de
+ CouponValidator, verificá que falla, y recién ahí la implementación mínima."
 
-# 3. Revisás los tests, pedís ajustes si hace falta
+# 3. Revisás cada ciclo: test → rojo → implementación → verde
 
-# 4. "Ahora escribí la implementación mínima para pasar los tests"
+# 4. "Siguiente comportamiento" — repetís hasta cubrir el plan
 
-# 5. Revisás, pedís refactor si hace falta
+# 5. Al final, con todo en verde: "refactorizá sin romper los tests"
 ```
 
 **Resultado:** lo mismo que la Opción A, pero con vos tomando las decisiones de diseño en cada paso.
@@ -458,6 +525,27 @@ La segunda versión evita 2 horas de retrabajo.
 
 ---
 
+## ¿Es necesario Python para esto?
+
+**Para usar el workflow en tu día a día: no.** Estos mismos patrones existen como *skills* de Claude Code — archivos `SKILL.md` que son solo instrucciones de workflow, sin código. Claude Code ya tiene las herramientas (leer archivos, explorar el repo, correr pytest), así que la skill únicamente le dice *cómo* trabajar:
+
+| Script de este módulo | Equivalente como skill (ej: [mattpocock/skills](https://github.com/mattpocock/skills)) |
+|---|---|
+| `grill_before_code.py` | `/grill-me` (interrogatorio) + `/grill-with-docs` (con CONTEXT.md y ADRs) |
+| `tdd_agent.py` | `/tdd` (ciclos verticales red-green-refactor) |
+| `diagnose_agent.py` | `/diagnose` (debugging sistemático) |
+
+Las skills tienen además una ventaja: el agente de Claude Code puede **explorar el código en vez de preguntarte** ("si una pregunta se responde mirando el codebase, mirá el codebase"), cosa que los scripts de este módulo no hacen — solo leen CONTEXT.md, CLAUDE.md y ADRs.
+
+**¿Entonces para qué los scripts en Python?** Dos razones:
+
+1. **Didáctica (el punto de este módulo):** las skills asumen que el loop agéntico existe y funciona. Los scripts lo construyen a mano — `tool_use`/`tool_result`, fases con system prompts distintos, verificación con pytest real, criterio de "listo" explícito. Entender ese loop es la base de los módulos 1 en adelante.
+2. **Automatización fuera del editor:** si el workflow tiene que correr sin un humano en Claude Code — en CI, en un pipeline, dentro de un producto — necesitás el loop programático. Ahí el script es el punto de partida.
+
+Regla práctica: **en tu editor, usá skills; en automatización, usá el loop programático.**
+
+---
+
 ## Estructura de ejemplos
 
 ```
@@ -473,7 +561,7 @@ examples/
 │       └── tests/
 │
 ├── 02-grill-before-code/
-│   ├── grill_before_code.py   ← interroga antes de codear
+│   ├── grill_before_code.py   ← interroga antes de codear (con respuesta recomendada)
 │   ├── CONTEXT.md             ← dominio del proyecto de ejemplo
 │   ├── CLAUDE.md              ← convenciones del proyecto
 │   └── docs/adr/
@@ -486,7 +574,7 @@ examples/
 │   └── README.md
 │
 ├── 04-tdd-agent/
-│   ├── tdd_agent.py           ← Red → Green → Refactor automático
+│   ├── tdd_agent.py           ← ciclos verticales RED→GREEN + refactor final
 │   └── specs/                 ← specs de ejemplo para practicar
 │       ├── discount_calculator_spec.md
 │       └── order_validator_spec.md

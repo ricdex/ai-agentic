@@ -145,10 +145,15 @@ total = time.time() - start
 
 ---
 
-## Ejemplos de código
+## Ejemplos con output
 
-- [`01_basic_stream.py`](./examples/01_basic_stream.py) — Streaming básico con métricas de latencia
-- [`02_streaming_agent.py`](./examples/02_streaming_agent.py) — Agente completo con streaming + tool use + SSE endpoint
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Streaming básico](./EXAMPLES.md#ejemplo-1--streaming-básico-con-métricas-de-latencia) | Sin streaming: 3.87s de silencio. Con streaming: primer token en 0.31s |
+| [02 — Agente con streaming](./EXAMPLES.md#ejemplo-2--agente-con-streaming-ver-el-razonamiento-en-tiempo-real) | Razonamiento aparece token a token; tool calls se ven cuando ocurren |
+| [03 — SSE endpoint](./EXAMPLES.md#ejemplo-3--sse-endpoint-streaming-desde-api-a-browser) | FastAPI + EventSource: texto del agente aparece letra a letra en el browser |
 
 ---
 

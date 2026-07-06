@@ -22,6 +22,7 @@ Uso:
 
 import argparse
 import json
+import re
 import sys
 import anthropic
 from datetime import datetime
@@ -204,6 +205,67 @@ REPORT_CONTRADICTION_TOOL = {
 }
 
 
+# ─── Validación de documentos ─────────────────────────────────────────────────
+#
+# Las preguntas las decide el LLM (ask_questions es dinámico), así que no hay
+# garantía de que cubra todo lo que el estándar de cada doc exige. Estas
+# funciones son el chequeo programático que corre DESPUÉS de las respuestas,
+# contra el contenido final propuesto — no contra las preguntas en sí.
+
+def validate_context_md(content: str) -> list[str]:
+    """CONTEXT.md funcional = dominio + entidades con reglas + invariantes + límites."""
+    issues = []
+    lower = content.lower()
+    if len(content.split()) < 60:
+        issues.append("Muy corto para tener entidades y reglas reales (<60 palabras)")
+    if not re.search(r"^#{1,3}\s", content, re.MULTILINE) and content.count("\n-") < 2:
+        issues.append("Sin estructura (encabezados o listas) — entidades probablemente no están separadas")
+    if not any(k in lower for k in ["nunca", "invariante", "no puede", "siempre"]):
+        issues.append("Falta al menos un invariante explícito (algo que NUNCA puede pasar)")
+    if not any(k in lower for k in ["no hace", "no es", "límite", "limite", "fuera de alcance", "no incluye"]):
+        issues.append("Falta la sección 'qué NO hace este sistema'")
+    return issues
+
+
+def validate_claude_md(content: str) -> list[str]:
+    """CLAUDE.md funcional = stack con versiones + estructura + cómo probar + qué evitar, ~100 líneas."""
+    issues = []
+    lower = content.lower()
+    lines = content.count("\n") + 1
+    if lines > 160:
+        issues.append(f"Tiene {lines} líneas — CLAUDE.md debe rondar ~100, no ser una enciclopedia")
+    if len(content.split()) < 40:
+        issues.append("Muy corto para cubrir stack + convenciones (<40 palabras)")
+    if not re.search(r"\d", content):
+        issues.append("No se detectan versiones (ej: 'Python 3.12') — sin versión no es reproducible")
+    if not any(k in lower for k in ["test", "pytest", "lint", "jest", "vitest"]):
+        issues.append("Falta el comando para correr tests/lint — el agente no puede autovalidarse sin esto")
+    if not any(k in lower for k in ["evitar", "no usar", "nunca", "restricci"]):
+        issues.append("Falta qué evitar / restricciones técnicas explícitas")
+    return issues
+
+
+def validate_adr(content: str) -> list[str]:
+    """ADR funcional (formato Nygard) = Contexto + Decisión + Consecuencias con trade-offs."""
+    issues = []
+    lower = content.lower()
+    for key, label in [("contexto", "Contexto"), ("decisi", "Decisión"), ("consecuencias", "Consecuencias")]:
+        if key not in lower:
+            issues.append(f"Falta la sección '{label}'")
+    if not re.search(r"[\(\[]?[+-][\)\]]?\s|\bbeneficio|\btrade-?off", lower):
+        issues.append("Consecuencias sin trade-offs explícitos (falta al menos un (+) y un (-))")
+    return issues
+
+
+def confirm_despite_issues(doc_name: str, issues: list[str]) -> bool:
+    """Muestra el checklist fallido y pregunta si escribir igual o que el agente corrija."""
+    print(f"\n  ⚠  Validación de {doc_name} encontró huecos contra el estándar:\n")
+    for issue in issues:
+        print(f"    ✗ {issue}")
+    ans = input("\n  ¿Escribir igual? (s = sí / n = que el agente lo corrija): ").strip().lower()
+    return ans == "s"
+
+
 # ─── Interacción ──────────────────────────────────────────────────────────────
 
 def run_questions(questions: list, intro: str) -> dict:
@@ -360,11 +422,19 @@ El CONTEXT.md debe incluir:
 3. Invariantes del sistema (cosas que NUNCA pueden pasar)
 4. Qué NO hace este sistema (límites del dominio)
 
+Checklist obligatorio — no llames a write_context_md hasta tener los 4 puntos:
+- [ ] Nombre del dominio + qué hace en 1-2 oraciones
+- [ ] Al menos 2-3 entidades centrales, cada una con sus reglas de negocio (no solo el nombre)
+- [ ] Al menos un invariante explícito ("nunca puede pasar que...")
+- [ ] Al menos un límite explícito de lo que el sistema NO hace
+Si terminaste las preguntas y falta alguno, hacé una ronda más antes de escribir.
+
 Proceso:
-1. Hacé preguntas sobre el dominio con ask_questions (una o dos rondas)
+1. Hacé preguntas sobre el dominio con ask_questions (una o dos rondas), cubriendo el checklist
 2. Si existen CLAUDE.md o ADRs, verificá que el CONTEXT.md no los contradiga
 3. Si encontrás contradicciones, reportalas con report_contradiction antes de escribir
 4. Cuando tengas todo, escribí el archivo con write_context_md
+5. Si write_context_md devuelve "REVISAR: ...", corregí el contenido (o preguntá lo que falte) y volvé a llamar write_context_md
 
 Reglas:
 - Usá la terminología exacta del desarrollador
@@ -376,12 +446,16 @@ Reglas:
         if block.name != "write_context_md":
             return "herramienta no reconocida"
         content = block.input["content"]
+        issues = validate_context_md(content)
+        if issues and not confirm_despite_issues("CONTEXT.md", issues):
+            return "REVISAR: " + " | ".join(issues)
         path = state["context_path"]
         if path.exists():
             backup = backup_file(path, state["backups_dir"])
             print(f"\n  [backup] {backup.name} → _backups/")
         path.write_text(content)
         print(f"  ✓ CONTEXT.md escrito en {path}")
+        print(f"  ✓ Validación: {'sin observaciones' if not issues else 'aceptado con observaciones'}")
         return f"OK:{path}"
 
     run_agent_loop(
@@ -432,12 +506,21 @@ El CLAUDE.md debe incluir:
 4. Cómo correr tests y linter
 5. Restricciones técnicas no obvias
 
+Checklist obligatorio — no llames a write_claude_md hasta tener los 5 puntos:
+- [ ] Lenguaje + versión exacta (ej: "Python 3.12", no solo "Python")
+- [ ] Framework/librerías clave + versión si aplica
+- [ ] Cómo se persiste y despliega (DB, cloud, contenedor)
+- [ ] Estructura de carpetas real del proyecto
+- [ ] Comando exacto para correr tests y comando para lint
+- [ ] Al menos una restricción explícita ("no usar X", "nunca Y")
+
 Proceso:
-1. Hacé preguntas sobre el stack con ask_questions (una o dos rondas)
+1. Hacé preguntas sobre el stack con ask_questions (una o dos rondas), cubriendo el checklist
 2. OBLIGATORIO: verificá que el CLAUDE.md propuesto no contradiga el CONTEXT.md
    Ejemplos de contradicción: CONTEXT.md dice "sistema stateless" pero CLAUDE.md dice "usamos sesiones en DB"
 3. Si encontrás contradicciones, reportalas con report_contradiction antes de escribir
 4. Escribí el archivo con write_claude_md
+5. Si write_claude_md devuelve "REVISAR: ...", corregí el contenido y volvé a llamarlo
 
 ## CONTEXT.md del proyecto (existente — no contradecir)
 {existing['context']}
@@ -447,12 +530,16 @@ Proceso:
         if block.name != "write_claude_md":
             return "herramienta no reconocida"
         content = block.input["content"]
+        issues = validate_claude_md(content)
+        if issues and not confirm_despite_issues("CLAUDE.md", issues):
+            return "REVISAR: " + " | ".join(issues)
         path = state["claude_path"]
         if path.exists():
             backup = backup_file(path, state["backups_dir"])
             print(f"\n  [backup] {backup.name} → _backups/")
         path.write_text(content)
         print(f"  ✓ CLAUDE.md escrito en {path}")
+        print(f"  ✓ Validación: {'sin observaciones' if not issues else 'aceptado con observaciones'}")
         return f"OK:{path}"
 
     run_agent_loop(
@@ -516,13 +603,19 @@ Estructura del ADR:
 - **Decisión**: exactamente qué se decidió
 - **Consecuencias**: (+) beneficios, (-) trade-offs aceptados
 
+Checklist obligatorio — no llames a write_adr hasta tener los 3 puntos:
+- [ ] Contexto: el problema concreto que disparó la decisión (no genérico)
+- [ ] Decisión: una frase no ambigua de qué se decidió exactamente
+- [ ] Al menos un beneficio (+) y un trade-off aceptado (-) en Consecuencias
+
 Proceso:
-1. Preguntá sobre la decisión con ask_questions
+1. Preguntá sobre la decisión con ask_questions, cubriendo el checklist
 2. OBLIGATORIO: verificá que el ADR no contradiga el CONTEXT.md ni el CLAUDE.md
    Ejemplos de contradicción: CONTEXT.md dice "dominio puro sin infraestructura"
    pero el ADR dice "guardar logs de dominio en Redis directamente"
 3. Si encontrás contradicciones, reportalas con report_contradiction
 4. Escribí el ADR con write_adr (el filename debe empezar con '{num_str}-')
+5. Si write_adr devuelve "REVISAR: ...", corregí el contenido y volvé a llamarlo
 
 ## CONTEXT.md del proyecto
 {existing['context']}
@@ -537,6 +630,10 @@ Proceso:
         filename = block.input["filename"]
         content = block.input["content"]
 
+        issues = validate_adr(content)
+        if issues and not confirm_despite_issues("el ADR", issues):
+            return "REVISAR: " + " | ".join(issues)
+
         if not filename.startswith(num_str):
             filename = f"{num_str}-{filename.lstrip('0123456789-')}"
 
@@ -544,6 +641,7 @@ Proceso:
         adr_path = state["adr_dir"] / filename
         adr_path.write_text(content)
         print(f"  ✓ docs/adr/{filename} escrito")
+        print(f"  ✓ Validación: {'sin observaciones' if not issues else 'aceptado con observaciones'}")
         return f"OK:{adr_path}"
 
     run_agent_loop(

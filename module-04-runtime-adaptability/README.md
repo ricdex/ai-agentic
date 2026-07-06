@@ -174,9 +174,15 @@ Si el agente reporta confianza < 0.7 en un contexto crítico, el sistema escala 
 
 ---
 
-## Ejemplos de código
+## Ejemplos con output
 
-- [`stage_aware.py`](./examples/stage_aware.py) — Agente completo con decisiones runtime según stage y riesgo
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Stage-aware agent](./EXAMPLES.md#ejemplo-1--stage-aware-agent-mismo-agente-comportamiento-diferente) | Dev → Haiku libre; producción + crítico → escala; 3 fallos → cambia approach |
+| [02 — Extended thinking](./EXAMPLES.md#ejemplo-2--extended-thinking-para-bugs-complejos) | Race condition resuelta con thinking de 47 líneas donde 2 fixes anteriores fallaron |
+| [03 — Confidence threshold](./EXAMPLES.md#ejemplo-3--confidence-threshold-el-agente-sabe-cuándo-no-sabe) | Confianza 95% → procede; confianza 25% + crítico → escala con razón específica |
 
 ---
 

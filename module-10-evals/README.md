@@ -175,10 +175,14 @@ REGRESSIONS_ALLOWED = {
 
 ---
 
-## Ejemplos de código
+## Ejemplos con output
 
-- [`01_basic_eval.py`](./examples/01_basic_eval.py) — Suite de evals determinísticas para el agente del módulo 3
-- [`02_llm_judge.py`](./examples/02_llm_judge.py) — LLM-as-Judge para evaluar calidad de código y claridad de PR
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Suite de evals determinísticas](./EXAMPLES.md#ejemplo-1--suite-de-evals-determinísticas) | 6 cases: fáciles pasan, el hard (race condition) falla; costo total $0.022 |
+| [02 — LLM-as-Judge](./EXAMPLES.md#ejemplo-2--llm-as-judge-evaluar-calidad-subjetiva) | Detecta print() de debug, penaliza "changes" como PR message, da 1.0 al fix de un char |
 
 ---
 

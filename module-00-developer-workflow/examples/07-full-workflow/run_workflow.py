@@ -102,8 +102,8 @@ def run_full_workflow(interactive: bool = True):
 
     # ── PASO 4: TDD — implementar con el plan del grill ──────────────
     print("\n[PASO 4 / 4] TDD Agent")
-    print("Implementa el plan con el ciclo Red → Green → Refactor.")
-    print("El agente tiene criterio de 'listo' explícito: los tests pasan.")
+    print("Implementa el plan en ciclos verticales: un comportamiento por ciclo")
+    print("RED → GREEN, con refactor final. Criterio de 'listo': los tests pasan.")
     print("─" * 50)
 
     output_dir = Path(__file__).parent / "output" / "tdd"

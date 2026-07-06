@@ -161,10 +161,14 @@ No todo necesita ser estructurado:
 
 ---
 
-## Ejemplos de código
+## Ejemplos con output
 
-- [`01_tool_as_schema.py`](./examples/01_tool_as_schema.py) — Forzar output estructurado con tool_choice
-- [`02_pydantic_extractor.py`](./examples/02_pydantic_extractor.py) — Pipeline completo de extracción con validación Pydantic
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Tool use como schema](./EXAMPLES.md#ejemplo-1--tool-use-como-schema-enforcement) | 4 issues → severity/category/components siempre en el tipo correcto; checkout caído dispara alerta |
+| [02 — Extracción con Pydantic](./EXAMPLES.md#ejemplo-2--extracción-con-pydantic-validación-y-tipos) | Texto libre de incidentes → struct tipado; DB caída dispara pager automáticamente |
 
 ---
 

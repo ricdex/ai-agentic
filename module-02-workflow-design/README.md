@@ -151,10 +151,14 @@ Para casos simples (< 4 estados), no uses LangGraph — es overhead innecesario.
 
 ---
 
-## Ejemplos de código
+## Ejemplos con output
 
-- [`feedback_loop.py`](./examples/feedback_loop.py) — Agente que escribe código y itera hasta que compila y pasa tests
-- [`multi_agent.py`](./examples/multi_agent.py) — Patrón orquestador-ejecutor: planificador + ejecutor separados
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Feedback loop](./EXAMPLES.md#ejemplo-1--feedback-loop-agente-que-itera-hasta-que-los-tests-pasan) | Agente escribe código, corre tests, itera hasta verde — 3 iteraciones para Stack |
+| [02 — Multi-agente orquestador](./EXAMPLES.md#ejemplo-2--multi-agente-orquestador--ejecutores-especializados) | Planificador (Haiku) + Developer (Sonnet) coordinados por un orquestador |
 
 ---
 

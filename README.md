@@ -80,6 +80,7 @@ module-08-mcp/                ← Model Context Protocol (estándar emergente)
 module-09-streaming/          ← Streaming, TTFT, SSE para frontend
 module-10-evals/              ← Eval suites, LLM-as-Judge, regresiones en CI
 module-11-deployment/         ← Lambda, containers, IaC, secrets, health checks
+module-12-background-agents/  ← Workers persistentes, queues, agentes 24/7
 ```
 
 | # | Módulo | Duración estimada |
@@ -98,6 +99,7 @@ module-11-deployment/         ← Lambda, containers, IaC, secrets, health check
 | 9 | Streaming | 2 días |
 | 10 | Evals y calidad | 1 semana |
 | 11 | Deployment en producción | 1 semana |
+| 12 | Agentes persistentes y background workers | 1 semana |
 
 ---
 

@@ -152,9 +152,15 @@ El agente analiza el log de CI fallido, identifica el problema, escribe el fix, 
 
 ---
 
-## Ejemplo de código
+## Ejemplos con output
 
-- [`issue_solver.py`](./examples/issue_solver.py) — Agente completo que resuelve un GitHub issue en un repo local
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Issue solver](./EXAMPLES.md#ejemplo-1--issue-solver-de-github-issue-a-código) | Agente explora repo, encuentra bug, escribe fix, verifica con tests |
+| [02 — Prompt caching comparison](./EXAMPLES.md#ejemplo-2--prompt-caching-costo-con-y-sin-caché) | 72% de ahorro en costo con `cache_control`, mismo resultado |
+| [03 — CI/CD agéntico](./EXAMPLES.md#ejemplo-3--cicd-agéntico-fix-automático-cuando-falla-el-pipeline) | GitHub Actions workflow que abre PR automático cuando CI falla |
 
 ---
 

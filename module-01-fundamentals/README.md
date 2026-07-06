@@ -133,13 +133,106 @@ Tu código                      Claude
 
 Lo importante: **Claude decide cuándo y cómo usar cada herramienta**. Vos solo definís qué herramientas existen.
 
+**Ejemplo mínimo — un tool call completo:**
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+# 1. Definís la herramienta
+tools = [{
+    "name": "read_file",
+    "description": "Lee el contenido de un archivo",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "Ruta del archivo"}
+        },
+        "required": ["path"]
+    }
+}]
+
+messages = [{"role": "user", "content": "¿Qué hace la función main en src/app.py?"}]
+
+# 2. Loop hasta que el agente termine
+while True:
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        tools=tools,
+        messages=messages
+    )
+
+    # 3. Si terminó, imprimís la respuesta
+    if response.stop_reason == "end_turn":
+        print(response.content[0].text)
+        break
+
+    # 4. Si llamó una herramienta, ejecutarla y continuar
+    if response.stop_reason == "tool_use":
+        messages.append({"role": "assistant", "content": response.content})
+
+        tool_results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                if block.name == "read_file":
+                    result = open(block.input["path"]).read()
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result
+                    })
+
+        messages.append({"role": "user", "content": tool_results})
+```
+
+Este loop es la base de todo agente. El módulo 0 lo construye en detalle; acá lo importante es entender la estructura: **el agente itera hasta que `stop_reason == "end_turn"`**.
+
 ---
 
-## Ejemplos de código
+## 1.6 Criterio de terminación: la parte que más falla
 
-- [`01_hello_agent.py`](./examples/01_hello_agent.py) — El agente más simple posible
-- [`02_tool_use.py`](./examples/02_tool_use.py) — Múltiples herramientas, loop completo
-- [`03_memory.py`](./examples/03_memory.py) — Memoria in-context vs externa
+Todo agente necesita saber cuándo parar. Hay dos tipos de criterio:
+
+**Criterio por herramienta** (el agente llama una herramienta especial cuando terminó):
+```python
+DONE_TOOL = {
+    "name": "task_complete",
+    "description": "Llamá esto cuando hayas completado la tarea",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "result": {"type": "string"},
+            "success": {"type": "boolean"}
+        },
+        "required": ["result", "success"]
+    }
+}
+```
+
+**Criterio por condición externa** (vos verificás si el objetivo se cumplió):
+```python
+# El agente escribe código → vos corrés los tests → si pasan, terminaste
+while not tests_pass():
+    response = agent.iterate()
+    if retries > MAX_RETRIES:
+        raise AgentStuck("El agente no pudo resolver el problema")
+```
+
+**Siempre definí un `max_iterations`**. Un agente sin límite puede loopear indefinidamente gastando tokens.
+
+---
+
+## Ejemplos con output
+
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Hello Agent](./EXAMPLES.md#ejemplo-1--hello-agent-react-loop-mínimo) | Loop ReAct mínimo, exploración de directorio, no alucina |
+| [02 — Tool use con completion tool](./EXAMPLES.md#ejemplo-2--tool-use-con-criterio-de-terminación-explícito) | Patrón `task_complete`, output estructurado con confianza y fuentes |
+| [03 — Memoria in-context vs SQLite](./EXAMPLES.md#ejemplo-3--memoria-in-context-vs-externa) | La memoria in-context muere con el proceso; SQLite persiste entre sesiones |
 
 ---
 
@@ -150,8 +243,11 @@ Construí un agente que:
 2. Puede leer archivos del directorio (`read_file`, `list_files`)
 3. Responde solo basándose en lo que leyó (no inventa)
 4. Si no encontró la respuesta, dice explícitamente qué buscó
+5. Tiene un límite de 5 iteraciones (tool calls)
 
-Criterio de éxito: el agente no alucina. Si preguntás "¿dónde está la función `calculate_tax`?" y no existe, debe decir que buscó y no la encontró.
+Criterio de éxito: el agente no alucina. Si preguntás "¿dónde está la función `calculate_tax`?" y no existe, debe decir que buscó y no la encontró — no inventar una respuesta.
+
+**Pista:** el criterio de "no inventar" se implementa en el system prompt, no en el código. El agente necesita instrucciones explícitas de que si no encuentra la información, lo diga.
 
 ---
 

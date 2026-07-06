@@ -140,11 +140,15 @@ episodes = vector_store.search(query_embedding, top_k=3)
 
 ---
 
-## Ejemplos de código
+## Ejemplos con output
 
-- [`01_embeddings_basic.py`](./examples/01_embeddings_basic.py) — Generar embeddings y calcular similitud coseno
-- [`02_rag_pipeline.py`](./examples/02_rag_pipeline.py) — Pipeline RAG completo con documentos técnicos
-- [`03_semantic_memory_agent.py`](./examples/03_semantic_memory_agent.py) — Agente con memoria episódica semántica (reemplaza módulo 1)
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Embeddings básicos](./EXAMPLES.md#ejemplo-1--embeddings-básicos-texto--vector--similitud) | "problema con cobro" encuentra "Error al procesar pago Visa" (sim: 0.81) sin compartir palabras |
+| [02 — Pipeline RAG completo](./EXAMPLES.md#ejemplo-2--pipeline-rag-completo) | 5 docs indexados; preguntas fuera del dominio reciben "No tengo esa información" |
+| [03 — Memoria semántica de episodios](./EXAMPLES.md#ejemplo-3--agente-con-memoria-semántica-de-episodios-pasados) | Nueva tarea encuentra episodios relevantes de cupones y descuentos anteriores |
 
 ---
 

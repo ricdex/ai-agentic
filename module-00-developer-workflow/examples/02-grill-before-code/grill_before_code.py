@@ -8,7 +8,11 @@ que el plan es sólido. Lo hace usando el contexto real del proyecto:
 CONTEXT.md, CLAUDE.md y los ADRs — así las preguntas son específicas
 al dominio y las decisiones ya tomadas, no genéricas.
 
-Inspirado en Matt Pocock /grill-me.
+Cada pregunta viene con la respuesta recomendada por el agente
+(justificada con el contexto) — Enter para aceptarla, o escribí
+tu propia respuesta para corregirlo.
+
+Inspirado en Matt Pocock /grill-me y /grill-with-docs.
 
 Uso (corré desde la raíz del proyecto):
     export ANTHROPIC_API_KEY="sk-ant-..."
@@ -130,9 +134,16 @@ TOOLS = [
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Opciones posibles, preferiblemente basadas en patrones ya usados en el proyecto"
+                },
+                "recommended_answer": {
+                    "type": "string",
+                    "description": (
+                        "Tu respuesta recomendada, justificada con el contexto del proyecto "
+                        "(ADRs, patrones existentes). El desarrollador puede aceptarla con Enter."
+                    )
                 }
             },
-            "required": ["question", "why_it_matters"]
+            "required": ["question", "why_it_matters", "recommended_answer"]
         }
     },
     {
@@ -217,6 +228,8 @@ Reglas críticas:
   ("Según ADR-003 usamos event sourcing en pagos — ¿esta feature debe seguir ese patrón?")
 - Si CLAUDE.md define convenciones de tests o estructura, preguntá si la feature las sigue
 - Hacé UNA pregunta a la vez, la más crítica primero
+- Para CADA pregunta proponé tu respuesta recomendada, justificada con el contexto
+  del proyecto (el desarrollador puede aceptarla o corregirte)
 - Máximo {max_questions} preguntas — después generá el plan igual con lo que tenés
 - NO preguntes sobre preferencias de estilo ni implementación obvia
 
@@ -258,14 +271,21 @@ Tipos de preguntas valiosas (usando el contexto del proyecto):
                     question = block.input["question"]
                     why = block.input["why_it_matters"]
                     options = block.input.get("options", [])
+                    recommended = block.input.get("recommended_answer", "")
 
                     print(f"\n[Q{session.questions_asked}] {question}")
                     print(f"    Por qué importa: {why}")
                     if options:
                         print(f"    Opciones: {' / '.join(options)}")
+                    if recommended:
+                        print(f"    Recomendación: {recommended}")
                     print()
 
-                    answer = input("Tu respuesta: ").strip()
+                    prompt = "Tu respuesta (Enter = aceptar recomendación): " if recommended else "Tu respuesta: "
+                    answer = input(prompt).strip()
+                    if not answer and recommended:
+                        answer = recommended
+                        print(f"    → aceptada: {recommended[:80]}")
                     session.answers.append({"question": question, "answer": answer})
 
                     tool_results.append({

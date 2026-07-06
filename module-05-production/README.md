@@ -203,9 +203,15 @@ Antes de poner un agente en producción:
 
 ---
 
-## Ejemplo de código
+## Ejemplos con output
 
-- [`observability.py`](./examples/observability.py) — El issue solver del módulo 3 con trazabilidad completa en Langfuse
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Observabilidad con trazabilidad](./EXAMPLES.md#ejemplo-1--observabilidad-con-langfuse-trazabilidad-completa) | Cada span y tool call con duración, tokens y costo. Issue resuelto: $0.003 |
+| [02 — Compresión de historial](./EXAMPLES.md#ejemplo-2--control-de-costos-compresión-de-historial) | 41 mensajes / 14.000 tokens → 2 mensajes / 820 tokens (94% reducción) |
+| [03 — Sandboxing y prompt injection](./EXAMPLES.md#ejemplo-3--seguridad-sandboxing-y-prompt-injection-prevention) | Path traversal bloqueado; 3 de 6 inputs detectados como injection |
 
 ---
 

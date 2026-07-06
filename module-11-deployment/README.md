@@ -223,12 +223,16 @@ Antes de poner el agente en producción real:
 
 ---
 
-## Ejemplos de código
+## Ejemplos con output
 
-- [`lambda_handler.py`](./examples/lambda_handler.py) — Handler Lambda completo con validación HMAC y SQS
-- [`Dockerfile`](./examples/Dockerfile) — Container para el agent worker
-- [`cloudrun.yaml`](./examples/cloudrun.yaml) — Deploy en Google Cloud Run
-- [`terraform/`](./examples/terraform/) — IaC mínima para AWS
+El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
+
+| Ejemplo | Qué demuestra |
+|---|---|
+| [01 — Lambda handler](./EXAMPLES.md#ejemplo-1--lambda-handler-completo) | Validación HMAC, filtro de eventos, SQS enqueue — responde en < 1s |
+| [02 — Dockerfile](./EXAMPLES.md#ejemplo-2--dockerfile-del-agent-worker) | Usuario no-root, healthcheck, layered build para cache de dependencias |
+| [03 — Health check endpoint](./EXAMPLES.md#ejemplo-3--health-check-endpoint) | HTTP 200 si todo ok; HTTP 503 si Redis caído — con JSON de detalle |
+| [04 — Terraform mínimo](./EXAMPLES.md#ejemplo-4--terraform-mínimo) | SQS FIFO + DLQ + Lambda + ECS Fargate en ~80 líneas de HCL |
 
 ---
 
