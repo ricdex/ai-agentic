@@ -1,0 +1,56 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: vm1-orchestrator/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  spec-watcher:
+    build:
+      context: .
+      dockerfile: vm1-orchestrator/Dockerfile
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: python spec_watcher.py
+
+  implementor:
+    build:
+      context: .
+      dockerfile: vm2-implementor/Dockerfile
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  reviewer:
+    build:
+      context: .
+      dockerfile: vm3-reviewer/Dockerfile
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      redis:
+        condition: service_healthy
