@@ -140,7 +140,7 @@ def run_feedback_loop(task: str, max_iterations: int = 5) -> LoopState:
         messages = [{"role": "user", "content": user_content}]
 
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=4096,
             tools=TOOLS,
             messages=messages,

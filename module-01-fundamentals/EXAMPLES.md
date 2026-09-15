@@ -207,7 +207,7 @@ def run_agent(question: str) -> dict:
 
     for i in range(MAX_ITERATIONS):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=1024,
             tools=TOOLS,
             messages=messages

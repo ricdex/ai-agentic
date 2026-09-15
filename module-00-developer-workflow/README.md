@@ -7,13 +7,24 @@ Los hábitos que instala acá son el 80% del valor — los agentes autónomos de
 
 ---
 
+## Paso a paso
+
+1. Generá o revisá `CONTEXT.md`, `CLAUDE.md` y ADRs; no avances si el vocabulario de dominio sigue ambiguo.
+2. Copiá el template de Feature Spec y definí resultado, límites, reglas y aceptación de una sola feature real.
+3. Corré el grill para cuestionar esa spec; guardá el resultado en `specs/` y resuelve cualquier ADR pendiente.
+4. Recién entonces derivá un comportamiento por vez en TDD. Usá diagnóstico y handoff solo cuando aparezcan un bug o una sesión larga.
+
+**Podés posponer:** scaffold, diagnose y handoff hasta que ya hayas completado una feature pequeña con spec y tests.
+
+---
+
 ## El cambio de mentalidad
 
 Tratá al agente como a un developer que se incorpora al repo y va a vivir ahí adentro — no como un autocompletado al que le dictás líneas. Un developer nuevo necesita, antes de tocar código, las mismas cinco cosas que un agente:
 
 | Necesidad del developer | Sin esto... | Con el workflow de este módulo |
 |---|---|---|
-| **Qué hacer** | Adivina el alcance de la feature, sobre-construye o sub-construye | El grill (`02`) clarifica el plan contra `CONTEXT.md` y los ADRs antes de escribir código |
+| **Qué hacer** | Adivina el alcance de la feature, sobre-construye o sub-construye | El grill (`02`) convierte la intención en una Feature Spec verificable contra `CONTEXT.md` y los ADRs antes de escribir código |
 | **Cómo comportarse** | Cada cambio tiene un estilo distinto, reinventa convenciones | `CLAUDE.md` fija las convenciones una sola vez (`00`), el scaffold (`03`) las aplica a la estructura |
 | **Cómo validar** | "Funciona en mi máquina", nadie sabe si está realmente listo | Criterio pasa/falla explícito: pytest real corriendo en cada ciclo, no una afirmación |
 | **Cómo probar** | Tests escritos después, a las apuradas, cubren lo que ya se implementó | TDD en ciclos verticales (`04`) — el test define el comportamiento antes del código |
@@ -36,14 +47,15 @@ flowchart TD
     CTX --> Rev["Revisar y ajustar CONTEXT.md<br/>el AI infiere el que, no el por que"]
     Rev --> Feature
 
-    Feature([Feature nueva]) --> Grill["02 · grill_before_code.py<br/>Interroga: CONTEXT.md + CLAUDE.md + ADRs<br/>Output: plan de implementacion, sin codigo"]
+    Feature([Feature nueva]) --> Grill["02 · grill_before_code.py<br/>Interroga: CONTEXT.md + CLAUDE.md + ADRs<br/>Output: Feature Spec, sin codigo"]
 
     Grill --> ADR["Escribir ADR si hay<br/>decision arquitectural no obvia<br/>docs/adr/NNN-nombre.md"]
-    Grill --> First{"Primera feature<br/>del proyecto?"}
-    ADR -.-> First
+    Grill --> Spec["specs/NNN-feature.md<br/>objetivo, reglas, no-objetivos,<br/>criterios de aceptación y evals"]
+    Spec --> First{"Primera feature<br/>del proyecto?"}
+    ADR -.-> Spec
 
     First -->|Si - una sola vez| Scaffold["03 · scaffold_generator.py<br/>Estructura: carpetas, pyproject.toml<br/>interfaces base, conftest.py<br/>Sin logica de negocio"]
-    First -->|No| TDD{"Implementar con TDD"}
+    First -->|No| TDD{"Implementar la spec con TDD"}
     Scaffold --> TDD
 
     TDD -->|Opcion A - automatizado| A["04 · tdd_agent.py<br/>ciclos RED-GREEN por comportamiento<br/>REFACTOR final"]
@@ -222,7 +234,7 @@ python grill_before_code.py "agregar sistema de cupones de descuento"
 
 El script busca automáticamente `CONTEXT.md`, `CLAUDE.md` y `docs/adr/*.md` subiendo hasta 4 niveles desde el directorio actual.
 
-**Resultado:** sesión interactiva donde el AI hace preguntas específicas del dominio (no genéricas), **propone su respuesta recomendada para cada una**, y al final produce un plan de implementación.
+**Resultado:** sesión interactiva donde el AI hace preguntas específicas del dominio (no genéricas), **propone su respuesta recomendada para cada una**, y al final produce y guarda una Feature Spec versionable en `specs/`. La spec define resultado, límites, reglas, criterios de aceptación, tests y evals; no dicta la implementación.
 
 ```
 [Q1] El precio se congela al confirmar (ADR-001). ¿El descuento del cupón
@@ -238,7 +250,7 @@ Tu respuesta (Enter = aceptar recomendación):
 
 ...
 
-== Plan de implementación ==
+== Feature Spec ==
 Archivos a crear: src/coupons.py, tests/test_coupons.py
 Archivos a modificar: src/orders.py
 Reglas: descuento sobre precio congelado, fail-safe en expiración...
@@ -620,18 +632,18 @@ python /ruta/a/module-00/examples/00-project-init/project_init.py
 # 2. Grill para la primera feature:
 cd /ruta/a/tu/repo
 python /ruta/a/module-00/examples/02-grill-before-code/grill_before_code.py "descripción de la feature"
-# → genera el plan; si hay decisión no obvia, escribir ADR antes de continuar
+# → genera specs/NNN-feature.md; si hay decisión no obvia, escribir ADR antes de continuar
 
 # 4. Scaffold (solo la primera vez):
 python /ruta/a/module-00/examples/03-scaffold-generator/scaffold_generator.py \
   --plan plan-del-grill.txt --output .
 
-# 5a. TDD automatizado con el plan como spec:
+# 5a. TDD automatizado con la Feature Spec como contrato:
 python /ruta/a/module-00/examples/04-tdd-agent/tdd_agent.py
 
 # 5b. O TDD manual en Claude Code:
 #     claude /ruta/a/tu/repo
-#     [pegás el plan del grill como contexto y guiás el ciclo RED→GREEN→REFACTOR]
+#     [usás la Feature Spec como contexto y guiás el ciclo RED→GREEN→REFACTOR]
 
 # Para cada feature siguiente: volvés al paso 3 (no al 4 — scaffold ya existe)
 ```

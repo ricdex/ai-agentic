@@ -80,7 +80,7 @@ def run_streaming_agent(task: str, on_text=None, on_tool_start=None, on_tool_end
 
     for iteration in range(6):
         with client.messages.stream(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=2048,
             tools=TOOLS,
             messages=messages,

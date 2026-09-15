@@ -1,6 +1,17 @@
 # Módulo 12 — Agentes Persistentes y Background Workers
 
-> "Un agente que sólo vive mientras vos lo mirás no es un agente — es un demo. Un agente real trabaja mientras dormís."
+> "Un agente persistente solo vale la pena cuando un evento, una cola y una métrica justifican que trabaje sin supervisión continua."
+
+---
+
+## Paso a paso
+
+1. Confirma que existe un evento repetible y un resultado medible; si no, usa un workflow on-demand.
+2. Empieza por el patrón queue-based: mensaje idempotente, timeout, retry limitado y dead-letter queue.
+3. Ejecutá el ejemplo de worker y prueba duplicados, fallos y reinicio antes de añadir más agentes.
+4. Añadí observabilidad, presupuesto y aprobación humana para acciones de impacto. Usa polling solo como última opción.
+
+**Complejidad a evitar:** workers 24/7 sin cola, métricas, límites de coste ni un owner responsable del resultado.
 
 ---
 
@@ -388,7 +399,7 @@ REPO_CONTEXT = load_repo_context()  # CONTEXT.md + estructura
 
 async def run_agent(event: dict) -> dict:
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=2000,
         system=[
             {
@@ -447,7 +458,7 @@ async def review_pr(pr_data: dict) -> str:
     diff = await fetch_pr_diff(pr_data["repo"], pr_data["pr_number"])
 
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=1000,
         system=[{
             "type": "text",
@@ -589,4 +600,4 @@ Bonus: configurá un webhook de GitHub que encolé issues nuevos automáticament
 
 ---
 
-Anterior: [Módulo 11 → Deployment](../module-11-deployment/README.md)
+Anterior: [Módulo 11 → Deployment](../module-11-deployment/README.md) · Siguiente: [Módulo 13 → Multimodal](../module-13-multimodal/README.md)

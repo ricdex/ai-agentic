@@ -40,7 +40,7 @@ def get_model(ctx: RuntimeContext) -> str:
     if ctx.is_critical_path or ctx.stage == "production":
         return "claude-opus-4-8"
     if ctx.test_failures > 0:
-        return "claude-sonnet-4-6"
+        return "claude-sonnet-5"
     return "claude-haiku-4-5-20251001"
 
 def get_behavior_instructions(ctx: RuntimeContext) -> str:
@@ -168,7 +168,7 @@ Archivos: ['src/finance.py'] | Crítico: False
 Fallos previos: 3 | Schema changes: False
 ==================================================
 
-Modelo seleccionado: claude-sonnet-4-6
+Modelo seleccionado: claude-sonnet-5
 Instrucciones de comportamiento:
 ⚠ Ya fallaste 3 veces. Cambiá completamente el approach.
 - No reutilices la lógica de los intentos anteriores
@@ -412,7 +412,7 @@ def run_with_confidence(task: str, code_context: str, is_critical: bool = False)
 
     for _ in range(5):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=600,
             system=f"""Antes de modificar cualquier código, usá report_confidence para indicar tu nivel de seguridad.
 Si {'es un contexto crítico y ' if is_critical else ''}tu confianza es alta (>0.7), procedé con apply_fix.

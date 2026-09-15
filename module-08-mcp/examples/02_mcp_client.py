@@ -62,7 +62,7 @@ async def run_agent_with_mcp(question: str, workspace_path: str):
 
             for _ in range(10):
                 response = claude.messages.create(
-                    model="claude-sonnet-4-6",
+                    model="claude-sonnet-5",
                     max_tokens=2048,
                     tools=claude_tools,
                     messages=messages,

@@ -91,7 +91,7 @@ def extract_incident(report_text: str, max_retries: int = 2) -> Incident:
             })
 
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=1024,
             tools=[tool],
             tool_choice={"type": "tool", "name": "submit_incident"},

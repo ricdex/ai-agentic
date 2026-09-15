@@ -52,3 +52,12 @@ failed_logs.txt
 # Build artifacts
 *.zip
 dist/
+
+# Tests y coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Fine-tuning (Módulo 14): checkpoints y adapters locales, nunca al repo
+*.safetensors
+adapter/

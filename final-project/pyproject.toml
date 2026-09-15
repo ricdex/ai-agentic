@@ -1,0 +1,14 @@
+[tool.pytest.ini_options]
+testpaths = ["shared/tests"]
+
+[tool.coverage.run]
+source = ["shared"]
+omit = ["shared/tests/*"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]

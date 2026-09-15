@@ -1,6 +1,17 @@
 # Módulo 9 — Streaming
 
-> "Sin streaming, el usuario ve nada por 10 segundos y luego todo a la vez. Con streaming, ve el agente pensando en tiempo real."
+> "Sin streaming, el usuario ve nada por 10 segundos y luego todo a la vez. Con streaming, ve progreso útil en tiempo real."
+
+---
+
+## Paso a paso
+
+1. Ejecutá `examples/01_basic_stream.py` y medí el tiempo hasta el primer token.
+2. Ejecutá `02_streaming_agent.py`; separá progreso de herramientas, respuesta al usuario y errores.
+3. Si hay una UI, transportá esos eventos por SSE y muestra estados comprensibles, no razonamiento interno sensible.
+4. Añadí cancelación y timeout antes de optimizar detalles visuales.
+
+**Cuándo usarlo:** tareas perceptiblemente largas. Para respuestas instantáneas, streaming agrega complejidad con poco valor.
 
 ---
 
@@ -29,7 +40,7 @@ Para agentes de larga duración (30s+), streaming es **obligatorio** en cualquie
 
 ```python
 with client.messages.stream(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5",
     max_tokens=1024,
     messages=[{"role": "user", "content": "Explicá este código"}]
 ) as stream:
@@ -49,7 +60,7 @@ Tool use y streaming se combinan, pero con una particularidad: los tool calls **
 
 ```python
 with client.messages.stream(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5",
     max_tokens=2048,
     tools=my_tools,
     messages=messages

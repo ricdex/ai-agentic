@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  final-project:
+    name: final-project (lint + tests + coverage)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: final-project
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r vm1-orchestrator/requirements.txt
+          pip install ruff pytest pytest-cov
+
+      - name: Lint shared/
+        run: ruff check shared/
+
+      - name: Test + coverage gate (>= 80%, ver claude.md raíz)
+        run: pytest shared/tests --cov=shared --cov-report=term-missing
+
+  examples-syntax-check:
+    name: module examples (syntax check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      # Los ejemplos de cada módulo llaman a la API de Claude en runtime y no
+      # corren en CI sin credenciales. Esto solo detecta errores de sintaxis
+      # y nombres no definidos (no todo el ruleset de estilo) para que un
+      # módulo nunca quede con un ejemplo roto sin que nadie se entere.
+      - name: Syntax + undefined-name check
+        run: ruff check --select=E9,F821,F811,F822,F823 module-*/examples final-project --exclude "*/sample-repo/*"

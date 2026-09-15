@@ -191,7 +191,7 @@ Sé específico y usa los nombres exactos del código. No inventes términos que
 
     for _ in range(30):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=8096,
             tools=TOOLS,
             messages=messages,

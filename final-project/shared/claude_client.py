@@ -1,12 +1,13 @@
 import os
+
 import anthropic
 
 client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 MODELS = {
     "fast": "claude-haiku-4-5-20251001",  # triage, routing
-    "standard": "claude-sonnet-4-6",       # implement, review
-    "powerful": "claude-opus-4-8",         # complex retries
+    "standard": "claude-sonnet-5",       # implement, review
+    "powerful": "claude-opus-5",            # complex retries
 }
 
 

@@ -103,7 +103,7 @@ def run_agent(question: str, max_iterations: int = 10) -> str:
 
     for iteration in range(max_iterations):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=4096,
             tools=TOOLS,
             messages=messages,

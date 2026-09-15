@@ -50,7 +50,7 @@ def review_code(
     impl_summary: str,
 ) -> dict:
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=2048,
         system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
         tools=REVIEW_TOOLS,

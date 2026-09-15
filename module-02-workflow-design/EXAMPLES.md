@@ -111,7 +111,7 @@ print("=== Feedback Loop Agent ===\n")
 for iteration in range(1, MAX_ITERATIONS + 1):
     print(f"--- Iteración {iteration} ---")
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=2000,
         system=SYSTEM,
         tools=TOOLS,
@@ -209,7 +209,7 @@ Solo JSON, sin texto adicional.""",
 def agent_developer(issue: str, plan: dict, file_content: str) -> str:
     """Escribe el código para implementar el cambio."""
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=1000,
         system="Implementá el cambio según el plan. Retorná SOLO el código Python del archivo modificado.",
         messages=[{"role": "user", "content": f"""

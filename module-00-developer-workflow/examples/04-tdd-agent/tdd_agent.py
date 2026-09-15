@@ -41,7 +41,7 @@ from pathlib import Path
 
 client = anthropic.Anthropic()
 
-MODEL = "claude-sonnet-4-6"
+MODEL = "claude-sonnet-5"
 
 
 @dataclass

@@ -361,4 +361,69 @@ Basado en implementaciones anteriores de descuentos, las consideraciones princip
 
 ---
 
+## Ejemplo 4 — Vector store real en producción (pgvector)
+
+**Archivo:** `examples/04_vector_store_pgvector.py`
+
+El mismo pipeline del ejemplo 2 (chunk → embed → retrieve → answer), pero la similitud coseno la calcula el índice `ivfflat` de Postgres en vez de un loop de numpy. Es la migración que describe la sección "Para producción" del README, corriendo de verdad.
+
+```python
+import psycopg
+
+conn = psycopg.connect(os.environ["DATABASE_URL"])
+conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+conn.execute("""
+    CREATE TABLE IF NOT EXISTS doc_chunks (
+        id SERIAL PRIMARY KEY, source TEXT, content TEXT, embedding vector(384)
+    )
+""")
+conn.execute("""
+    CREATE INDEX IF NOT EXISTS doc_chunks_embedding_idx
+    ON doc_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 10)
+""")
+
+# Insertar: el embedding se manda como lista de floats, psycopg lo adapta al tipo vector
+conn.execute(
+    "INSERT INTO doc_chunks (source, content, embedding) VALUES (%s, %s, %s)",
+    (source, chunk, embed_model.encode(chunk).tolist()),
+)
+
+# Retrieve: <=> es el operador de distancia coseno de pgvector
+rows = conn.execute("""
+    SELECT source, content, 1 - (embedding <=> %s) AS similarity
+    FROM doc_chunks ORDER BY embedding <=> %s LIMIT 3
+""", (query_embedding, query_embedding)).fetchall()
+```
+
+**Output esperado:**
+
+```
+Indexados 9 chunks de 3 documentos en pgvector.
+
+Query: ¿qué pasa si falla un cobro?
+  [0.79] billing.md
+  [0.31] deploys.md
+  [0.22] auth.md
+Respuesta: Se reintenta hasta 3 veces con backoff exponencial antes de marcar la suscripción como `past_due` y notificar al usuario.
+
+Query: ¿cómo se invalida una sesión?
+  [0.74] auth.md
+  [0.28] billing.md
+  [0.19] deploys.md
+Respuesta: El logout agrega el jti del token a una blocklist en Redis.
+
+Query: ¿cuál es la política de precios de la empresa?
+  [0.35] billing.md
+  [0.30] auth.md
+  [0.24] deploys.md
+Respuesta: No tengo esa información en el contexto indexado.
+```
+
+**Qué muestra:**
+- La similitud más alta (0.79, 0.74) gana la respuesta; el resto queda como contexto irrelevante que Claude descarta.
+- La pregunta fuera de dominio ("política de precios") no supera ningún chunk con similitud alta → el agente admite que no lo sabe en vez de inventar.
+- El costo operativo real está en el índice `ivfflat`: con 9 chunks es overkill, pero es el mismo camino que escala a millones de vectores sin reescribir el pipeline.
+
+---
+
 Ver el [README principal](./README.md) para los conceptos de embeddings, chunking y opciones de vector stores.

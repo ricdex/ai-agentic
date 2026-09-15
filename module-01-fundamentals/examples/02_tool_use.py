@@ -167,7 +167,7 @@ def analyze_codebase(task: str, working_dir: str) -> str:
         iteration += 1
 
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=4096,
             tools=TOOLS,
             messages=messages,

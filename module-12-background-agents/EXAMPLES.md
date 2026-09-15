@@ -171,7 +171,7 @@ class WorkerMetrics:
 def choose_model(diff: str) -> str:
     lines_changed = diff.count('\n')
     if lines_changed > 100:
-        return "claude-sonnet-4-6"   # diffs grandes requieren más razonamiento
+        return "claude-sonnet-5"   # diffs grandes requieren más razonamiento
     return "claude-haiku-4-5-20251001"      # diffs pequeños, más rápido y barato
 
 # Simular cola con eventos de distinta complejidad
@@ -349,7 +349,7 @@ def agent_issue_triage(event: dict) -> str:
 
 def agent_ci_fix(event: dict) -> str:
     response = client.messages.create(
-        model="claude-sonnet-4-6",  # CI failures requieren más razonamiento
+        model="claude-sonnet-5",  # CI failures requieren más razonamiento
         max_tokens=500,
         system="Analizá el log de CI y explicá la causa raíz y el fix más probable. Sé específico.",
         messages=[{"role": "user", "content": f"CI failure en {event['workflow']}:\n{event.get('log', 'N/A')}"}]

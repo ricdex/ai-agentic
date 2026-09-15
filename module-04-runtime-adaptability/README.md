@@ -4,6 +4,17 @@
 
 ---
 
+## Paso a paso
+
+1. Ejecutá `examples/stage_aware.py` y compará la misma tarea en `dev`, `staging` y `production`.
+2. Escribí una política simple: permisos, presupuesto, timeout y condición de escalamiento por entorno.
+3. Probá un caso de baja confianza o presupuesto agotado; el resultado esperado es parar o escalar, no insistir.
+4. Solo después añadí routing dinámico de modelos o reasoning más costoso.
+
+**Objetivo al terminar:** cada acción sensible tiene una política explícita, no una instrucción vaga en el prompt.
+
+---
+
 ## 4.1 El problema del agente estático
 
 Un agente que siempre opera igual tiene un problema fundamental: el costo de error varía enormemente según el contexto.
@@ -73,14 +84,14 @@ def should_escalate_to_human(ctx: RuntimeContext) -> tuple[bool, str]:
 def get_model_for_context(ctx: RuntimeContext) -> str:
     # Problema complejo o contexto crítico → modelo más capaz
     if ctx.is_critical_path or ctx.stage == "production":
-        return "claude-opus-4-7"
+        return "claude-opus-5"
 
     # Iteración después de fallo → más razonamiento
     if ctx.test_failures > 0:
-        return "claude-sonnet-4-6"
+        return "claude-sonnet-5"
 
     # Caso estándar
-    return "claude-sonnet-4-6"
+    return "claude-sonnet-5"
 
 def get_agent_temperature_guidance(ctx: RuntimeContext) -> str:
     """Instrucciones que hacen al agente más o menos conservador."""
@@ -108,7 +119,7 @@ Cuando el agente necesita razonar profundamente antes de actuar (diagnóstico de
 
 ```python
 response = client.messages.create(
-    model="claude-opus-4-7",
+    model="claude-opus-5",
     max_tokens=16000,
     thinking={
         "type": "enabled",

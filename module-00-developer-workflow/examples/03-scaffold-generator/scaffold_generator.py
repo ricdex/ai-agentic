@@ -211,7 +211,7 @@ Reglas:
 
     for _ in range(6):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=8192,
             tools=SCAFFOLD_TOOLS,
             messages=messages,

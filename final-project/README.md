@@ -7,6 +7,18 @@ Este proyecto implementa una **software factory** funcional: un sistema que auto
 
 ---
 
+## Paso a paso
+
+1. Empieza con `demo-repo/` y abre una issue pequeña que tenga un resultado verificable.
+2. Revisa la Feature Spec generada: confirma alcance, no-alcance, reglas, tests y evals antes de aprobarla.
+3. Comenta `/factory approve`; observa el trace de triage, implementación, tests y revisión.
+4. Revisa el PR contra la Feature Spec y mergea solo con revisión humana.
+5. Usa Docker Compose únicamente como laboratorio local. Para producción, sigue la arquitectura y los criterios pendientes en [`specs/001-serverless-spec-first-factory.md`](./specs/001-serverless-spec-first-factory.md).
+
+**No saltes el paso 2:** el valor del proyecto no es abrir PRs automáticamente; es automatizar cambios solo cuando el contrato está claro y es comprobable.
+
+---
+
 ## Qué hace
 
 ```
@@ -14,8 +26,8 @@ GitHub Issue abierto
         │
         ▼
 ┌──────────────────┐
-│  VM1: Orchestrator│  Recibe el webhook · Triage · Spec (si aplica)
-│  + Spec Watcher  │
+│ Orchestrator      │  Recibe el webhook · Triage · Feature Spec
+│ + aprobación humana│  Toda issue automatable pasa por este gate
 └────────┬─────────┘
          │ Redis queue
          ▼
@@ -42,7 +54,7 @@ GitHub Issue abierto
 | Stage | Quién | Notas |
 |---|---|---|
 | Triage | Agente (Haiku) | Decide si es automatable y la complejidad |
-| Spec | Agente (Sonnet) | Solo para issues complejos/ambiguos |
+| Feature Spec | Agente (Sonnet) + humano | Toda issue automatable: alcance, reglas, aceptación y verificación antes de escribir código |
 | Implement | Agente (Sonnet/Opus) | ReAct loop con tools, retry automático |
 | Code review | Agente (Sonnet) | Structured output, bloquea si hay issues reales |
 | Verify | Tests reales | Corre pytest en entorno limpio |
@@ -148,7 +160,9 @@ En ~2-4 minutos deberías ver un PR abierto automáticamente.
 
 ---
 
-## Setup en cloud (3 VMs en AWS)
+## Referencia heredada: setup en cloud con 3 VMs
+
+> Esta ruta se mantiene para estudiar el prototipo original, pero **no es la arquitectura de producción recomendada**. Requiere hosts persistentes, SSH, Redis autogestionado y secretos entregados a Terraform. La arquitectura objetivo está definida en [`specs/001-serverless-spec-first-factory.md`](./specs/001-serverless-spec-first-factory.md): eventos gestionados, jobs efímeros, secret manager y aprobación humana antes de implementar.
 
 ### 1. Preparar variables
 
@@ -176,12 +190,12 @@ git clone https://github.com/YOUR_ORG/YOUR_FACTORY_REPO /opt/factory
 ```
 por la URL de tu fork de este repositorio.
 
-### 3. Deploy
+### 3. Planificar el deploy
 
 ```bash
 cd infra
 terraform init
-terraform apply
+terraform plan
 ```
 
 El output incluye:
@@ -191,7 +205,7 @@ webhook_url = "http://1.2.3.4:8000/webhook"
 
 Pegar esa URL en el webhook de GitHub.
 
-### 4. Verificar
+### 4. Verificar (solo si se aprobó ejecutar el prototipo heredado)
 
 ```bash
 ssh ubuntu@<orchestrator_ip> "docker compose logs orchestrator"
@@ -203,11 +217,12 @@ ssh ubuntu@<reviewer_ip> "docker compose logs reviewer"
 
 ## Flujo de un issue
 
-### Issue simple (sin spec)
+### Issue automatable
 ```
 Issue abierto
-→ [~5s]   Triage: automatable=true, complexity=low, needs_spec=false
-→ [~10s]  Comentario: "Implementación iniciada, branch: factory/abc123/issue-42"
+→ [~5s]   Triage: automatable=true, complejidad estimada
+→ [~10s]  Feature Spec generada y comentada en el issue
+→ [Humano] responde "/factory approve"
 → [~2min] Implementor: clona repo, escribe fix, corre tests
 → [~3min] Comentario: "✅ Implementación lista. Enviando a revisión."
 → [~4min] Reviewer: code review + verifica tests en entorno limpio
@@ -215,14 +230,7 @@ Issue abierto
 → Notificación al dev → review → merge
 ```
 
-### Issue complejo (con spec)
-```
-Issue abierto
-→ Triage: automatable=true, complexity=high, needs_spec=true
-→ Spec generado y comentado en el issue
-→ [Human] responde "/factory approve" en GitHub
-→ Implementación inicia normalmente...
-```
+Una issue que no es automatizable sigue quedando etiquetada para revisión manual; la Factory no intenta implementar una solución sin un contrato aprobado.
 
 ---
 

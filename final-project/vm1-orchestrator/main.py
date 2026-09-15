@@ -10,7 +10,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 
 from shared.github_client import GitHubClient
 from shared.models import Issue, Task, TaskStatus
-from shared.queue_client import QUEUE_IMPLEMENT, QUEUE_SPEC_PENDING, QueueClient
+from shared.queue_client import QUEUE_SPEC_PENDING, QueueClient
 from triage_agent import generate_spec, triage_issue
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [orchestrator] %(message)s")
@@ -61,38 +61,29 @@ def process_issue(issue: Issue) -> None:
         branch_name=branch_name,
     )
 
-    if triage.needs_spec:
-        spec = generate_spec(issue.title, issue.body, triage.suggested_approach)
-        task.spec = spec
-        task.status = TaskStatus.SPEC_PENDING
+    # Una issue no es una especificación: toda automatización pasa primero por
+    # un contrato revisable. Esto evita que el implementor infiera alcance o
+    # decisiones de producto a partir de un título ambiguo.
+    spec = generate_spec(issue.title, issue.body, triage.suggested_approach)
+    task.spec = spec
+    task.status = TaskStatus.SPEC_PENDING
 
-        github.post_comment(
-            issue.repo, issue.number,
-            f"## 🏭 Factory — Spec generado\n\n"
-            f"{spec}\n\n"
-            f"---\n"
-            f"Responde con `/factory approve` para iniciar implementación, "
-            f"o `/factory reject <feedback>` para pedir cambios.\n\n"
-            f"*Task ID: `{task_id}`*",
-        )
-        queue.push(QUEUE_SPEC_PENDING, {
-            "task": dataclasses.asdict(task),
-            "issue_number": issue.number,
-            "repo": issue.repo,
-        })
-        logger.info(f"Task {task_id} waiting for spec approval")
-    else:
-        task.status = TaskStatus.IMPLEMENTING
-        github.post_comment(
-            issue.repo, issue.number,
-            f"🏭 **Factory** — Implementación iniciada.\n\n"
-            f"**Enfoque:** {triage.suggested_approach}\n"
-            f"**Complejidad:** {triage.complexity.value}\n"
-            f"**Branch:** `{branch_name}`\n\n"
-            f"*Task ID: `{task_id}`*",
-        )
-        queue.push(QUEUE_IMPLEMENT, dataclasses.asdict(task))
-        logger.info(f"Task {task_id} queued for implementation")
+    github.post_comment(
+        issue.repo, issue.number,
+        f"## 🏭 Factory — Feature Spec generada\n\n"
+        f"{spec}\n\n"
+        f"---\n"
+        f"**Complejidad estimada:** {triage.complexity.value}\n"
+        f"Responde con `/factory approve` para iniciar implementación, "
+        f"o `/factory reject <feedback>` para pedir cambios.\n\n"
+        f"*Task ID: `{task_id}`*",
+    )
+    queue.push(QUEUE_SPEC_PENDING, {
+        "task": dataclasses.asdict(task),
+        "issue_number": issue.number,
+        "repo": issue.repo,
+    })
+    logger.info(f"Task {task_id} waiting for spec approval")
 
 
 @app.post("/webhook")

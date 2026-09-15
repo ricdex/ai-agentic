@@ -54,11 +54,38 @@ Este curso es para pasar de "usuario de AI" a "arquitecto de sistemas agénticos
 
 ---
 
-## ¿Por qué no SDD (Spec Driven Development)?
+## Ingeniería guiada por especificaciones, no por volumen de código
 
-SDD agrega un paso formal de especificación antes de codear. En workflows agénticos, **los tests son la spec**. El agente sabe que terminó cuando los tests pasan — no cuando un documento dice que terminó.
+Un agente puede producir código mucho más rápido que una persona. Por eso el trabajo de un AI Engineer no es dictarle implementaciones: es definir con precisión **qué resultado de negocio debe conseguir**, qué no puede hacer y cómo se comprobará.
 
-Usamos **TaS (Tests as Spec)**: escribís los tests primero, el agente trabaja hasta que pasan. Más simple, más robusto, más alineado con cómo funcionan los sistemas en producción.
+Usamos **Spec → Tests → Implementación → Evals**:
+
+1. **Spec**: contrato breve y versionado con objetivo, alcance, reglas, interfaces observables, riesgos y criterios de aceptación.
+2. **Tests**: evidencia determinista de los comportamientos críticos del contrato.
+3. **Implementación**: el agente elige el mínimo código necesario para satisfacer ambos.
+4. **Evals**: miden calidad, seguridad, coste y comportamiento del agente en escenarios reales.
+
+Los tests no sustituyen una spec: prueban ejemplos concretos. La spec evita que el agente optimice para una suite incompleta, invente alcance o tome decisiones de producto sin autorización. Tampoco buscamos documentos largos: una spec debe explicar el resultado y los límites, no prescribir cada clase o función.
+
+El template de [Feature Spec](./module-00-developer-workflow/templates/feature-spec.md.template) es el punto de partida para cada cambio no trivial.
+
+---
+
+## Ruta paso a paso
+
+No intentes leer todos los módulos ni ejecutar todos los scripts. Cada paso produce un artefacto que el siguiente usa.
+
+1. **Define el contrato:** completa una Feature Spec con resultado, límites y criterios de aceptación. Empieza en el [Módulo 0](./module-00-developer-workflow/README.md).
+2. **Entiende el loop mínimo:** ejecuta un agente que usa una herramienta, observa el ciclo y añade una sola regla de finalización en el [Módulo 1](./module-01-fundamentals/README.md).
+3. **Hazlo confiable:** diseña el estado, los reintentos y el gate humano de un caso real en el [Módulo 2](./module-02-workflow-design/README.md).
+4. **Resuelve una issue:** pasa de una Feature Spec a tests, cambio mínimo y PR en el [Módulo 3](./module-03-dev-workflows/README.md).
+5. **Añade controles de producción:** define política por entorno, trazas, coste y evals en los módulos [4](./module-04-runtime-adaptability/README.md), [5](./module-05-production/README.md) y [10](./module-10-evals/README.md).
+6. **Elige capacidades solo si el caso las necesita:** memoria/RAG (6), datos estructurados (7), MCP (8), streaming (9) y multimodal (13).
+7. **Despliega el patrón adecuado:** usa serverless para trabajo corto o jobs efímeros para trabajo largo en el [Módulo 11](./module-11-deployment/README.md); usa agentes persistentes solo si hay un evento o una cola que los justifique (12).
+8. **Entrená solo si el volumen lo justifica:** agotá prompting y RAG antes de considerar fine-tuning — el framework de decisión está en el [Módulo 14](./module-14-fine-tuning/README.md).
+9. **Integra todo:** ejecuta y mejora la [Software Factory](./final-project/README.md) sin saltarte la aprobación de la Feature Spec.
+
+**Regla de avance:** no pases al siguiente paso hasta poder explicar el artefacto generado y el criterio que demuestra que funciona. El código es la última consecuencia de una decisión bien especificada.
 
 ---
 
@@ -71,7 +98,7 @@ module-02-workflow-design/    ← Cómo diseñar loops y coordinación
 module-03-dev-workflows/      ← Agentes que mueven producto
 module-04-runtime-adaptability/ ← Decisiones dinámicas en runtime
 module-05-production/         ← Observabilidad, costos, seguridad
-final-project/                ← Autopilot: GitHub Issue → PR autónomo
+final-project/                ← Software Factory: Issue → Triage → Implement → Review → PR
 
 ── Avanzado ──────────────────────────────────────────────────────
 module-06-rag-memory/         ← RAG, embeddings, memoria semántica
@@ -81,6 +108,8 @@ module-09-streaming/          ← Streaming, TTFT, SSE para frontend
 module-10-evals/              ← Eval suites, LLM-as-Judge, regresiones en CI
 module-11-deployment/         ← Lambda, containers, IaC, secrets, health checks
 module-12-background-agents/  ← Workers persistentes, queues, agentes 24/7
+module-13-multimodal/         ← Vision, documentos, audio → texto + Claude
+module-14-fine-tuning/        ← Cuándo (no) entrenar; LoRA en modelos abiertos
 ```
 
 | # | Módulo | Duración estimada |
@@ -91,7 +120,7 @@ module-12-background-agents/  ← Workers persistentes, queues, agentes 24/7
 | 3 | Dev workflows agénticos | 1.5 semanas |
 | 4 | Runtime adaptability | 1 semana |
 | 5 | Producción y observabilidad | 1 semana |
-| F | **Proyecto Final: Autopilot** | 2 semanas |
+| F | **Proyecto Final: Software Factory** | 2 semanas |
 | — | *— Avanzado —* | — |
 | 6 | RAG y memoria semántica | 1 semana |
 | 7 | Structured outputs | 3 días |
@@ -100,6 +129,8 @@ module-12-background-agents/  ← Workers persistentes, queues, agentes 24/7
 | 10 | Evals y calidad | 1 semana |
 | 11 | Deployment en producción | 1 semana |
 | 12 | Agentes persistentes y background workers | 1 semana |
+| 13 | Agentes multimodales (vision, documentos, audio) | 3 días |
+| 14 | Fine-tuning: cuándo (no) usarlo | 3 días |
 
 ---
 
@@ -108,10 +139,9 @@ module-12-background-agents/  ← Workers persistentes, queues, agentes 24/7
 ### Requisitos
 
 ```bash
-python --version   # 3.11+
-node --version     # 20+
-go version         # 1.22+
-redis-cli --version # 7+
+python --version          # 3.11+
+docker --version          # para el proyecto final (docker compose)
+docker compose version    # para el proyecto final
 ```
 
 ### Variables de entorno
@@ -132,11 +162,18 @@ pip install anthropic langfuse pydantic pytest pytest-asyncio httpx
 # Python (módulos avanzados 6-11)
 pip install sentence-transformers numpy mcp fastapi uvicorn
 
-# TypeScript (webhook handler del proyecto final)
-cd final-project/webhook-handler && npm install
+# Python (módulo 6, vector store en producción — opcional, requiere Postgres+pgvector)
+pip install psycopg[binary]
 
-# Go (test runner del proyecto final)
-cd final-project/test-runner && go mod download
+# Python (módulo 13 — multimodal)
+pip install faster-whisper
+
+# Python (módulo 14 — fine-tuning local con LoRA)
+pip install torch transformers peft datasets
+
+# Proyecto final: Software Factory (vm1-orchestrator, vm2-implementor, vm3-reviewer)
+# Corre entera con Docker Compose, no hace falta instalar cada servicio a mano
+cd final-project && make up
 ```
 
 ---
@@ -145,8 +182,8 @@ cd final-project/test-runner && go mod download
 
 | Modelo | Cuándo usarlo | Costo relativo |
 |---|---|---|
-| `claude-opus-4-7` | Planificación compleja, razonamiento profundo | Alto |
-| `claude-sonnet-4-6` | Balance calidad/velocidad, la mayoría de los casos | Medio |
+| `claude-opus-5` | Planificación compleja, razonamiento profundo | Alto |
+| `claude-sonnet-5` | Balance calidad/velocidad, la mayoría de los casos | Medio |
 | `claude-haiku-4-5-20251001` | Clasificación, routing, tareas simples y rápidas | Bajo |
 
 **Regla práctica:** empezá con Sonnet. Bajá a Haiku si no necesitás razonamiento. Subí a Opus solo si el problema lo requiere.

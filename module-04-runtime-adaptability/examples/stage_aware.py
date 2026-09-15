@@ -76,7 +76,7 @@ def compute_decision(ctx: RuntimeContext, task_description: str) -> AdaptiveDeci
         return AdaptiveDecision(
             should_escalate=True,
             escalation_reason="Cambio crítico en producción",
-            model_to_use="claude-opus-4-7",
+            model_to_use="claude-opus-5",
             use_extended_thinking=True,
             behavior_guidance="",
             confidence_required=0.95
@@ -86,7 +86,7 @@ def compute_decision(ctx: RuntimeContext, task_description: str) -> AdaptiveDeci
         return AdaptiveDecision(
             should_escalate=True,
             escalation_reason=f"3 fallas consecutivas — debugging manual requerido",
-            model_to_use="claude-opus-4-7",
+            model_to_use="claude-opus-5",
             use_extended_thinking=True,
             behavior_guidance="",
             confidence_required=0.90
@@ -104,7 +104,7 @@ def compute_decision(ctx: RuntimeContext, task_description: str) -> AdaptiveDeci
 
     # Selección de modelo y comportamiento
     if ctx.stage == "production":
-        model = "claude-sonnet-4-6"
+        model = "claude-sonnet-5"
         thinking = False
         guidance = (
             "Estás en PRODUCCIÓN. Sé conservador. "
@@ -113,7 +113,7 @@ def compute_decision(ctx: RuntimeContext, task_description: str) -> AdaptiveDeci
         confidence = 0.85
 
     elif ctx.test_failures > 0:
-        model = "claude-sonnet-4-6"
+        model = "claude-sonnet-5"
         thinking = ctx.test_failures >= 2  # extended thinking si falló 2+ veces
         guidance = (
             f"Fallaste {ctx.test_failures} vez/veces. "
@@ -122,7 +122,7 @@ def compute_decision(ctx: RuntimeContext, task_description: str) -> AdaptiveDeci
         confidence = 0.75
 
     else:
-        model = "claude-sonnet-4-6"
+        model = "claude-sonnet-5"
         thinking = False
         guidance = "Procedé normalmente. Iterá si es necesario."
         confidence = 0.70

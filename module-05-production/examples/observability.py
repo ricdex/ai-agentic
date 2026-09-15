@@ -63,7 +63,7 @@ class SpanMetrics:
 
     @property
     def cost_usd(self) -> float:
-        # Precios aproximados claude-sonnet-4-6 (Mayo 2025)
+        # Precios aproximados claude-sonnet-5 (Mayo 2025)
         input_cost = (self.input_tokens - self.cached_tokens) * 3.0 / 1_000_000
         cached_cost = self.cached_tokens * 0.30 / 1_000_000
         output_cost = self.output_tokens * 15.0 / 1_000_000
@@ -273,7 +273,7 @@ def solve_with_observability(task: str, repo_path: str) -> TraceMetrics:
 
         try:
             response = client.messages.create(
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5",
                 max_tokens=4096,
                 tools=TOOLS,
                 messages=messages,

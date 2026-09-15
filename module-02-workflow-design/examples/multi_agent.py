@@ -42,7 +42,7 @@ def security_reviewer(diff: str) -> ReviewResult:
     Usa Opus para razonamiento profundo en problemas de seguridad.
     """
     response = client.messages.create(
-        model="claude-sonnet-4-6",  # Sonnet es suficiente para este análisis
+        model="claude-sonnet-5",  # Sonnet es suficiente para este análisis
         max_tokens=2048,
         system=(
             "Sos un experto en seguridad de aplicaciones. "
@@ -64,7 +64,7 @@ def security_reviewer(diff: str) -> ReviewResult:
         data = json.loads(text[start:end])
         return ReviewResult(
             reviewer="security",
-            model_used="claude-sonnet-4-6",
+            model_used="claude-sonnet-5",
             findings=data.get("findings", []),
             severity=data.get("severity", "info"),
             summary=data.get("summary", text)
@@ -72,7 +72,7 @@ def security_reviewer(diff: str) -> ReviewResult:
     except Exception:
         return ReviewResult(
             reviewer="security",
-            model_used="claude-sonnet-4-6",
+            model_used="claude-sonnet-5",
             findings=[text],
             severity="info",
             summary=text[:200]
@@ -281,7 +281,7 @@ Analizá este PR y usá los agentes especializados según consideres necesario."
 
     for _ in range(10):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=2048,
             tools=ORCHESTRATOR_TOOLS,
             messages=messages,

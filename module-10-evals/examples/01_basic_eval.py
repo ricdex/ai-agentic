@@ -233,7 +233,7 @@ def run_agent_on_case(case: EvalCase) -> EvalResult:
         for _ in range(5):
             iterations += 1
             response = client.messages.create(
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5",
                 max_tokens=2048,
                 tools=tools,
                 messages=messages,

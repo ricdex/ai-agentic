@@ -4,6 +4,17 @@
 
 ---
 
+## Paso a paso
+
+1. Elegí una decisión que otro sistema debe consumir, por ejemplo la severidad de un issue.
+2. Ejecutá `examples/01_tool_as_schema.py` y verificá que el resultado cumple el schema antes de usarlo.
+3. Ejecutá `02_pydantic_extractor.py` para validar, rechazar o reparar entradas inválidas.
+4. Define qué hacer ante un schema inválido: retry limitado, fallback o escalamiento humano.
+
+**Regla:** no uses texto libre para disparar acciones, cambiar estado ni integrar otro sistema.
+
+---
+
 ## 7.1 El problema del texto libre
 
 ```python
@@ -58,7 +69,7 @@ ANALYZE_TOOL = {
 
 # Forzar que use exactamente esta herramienta
 response = client.messages.create(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5",
     tools=[ANALYZE_TOOL],
     tool_choice={"type": "tool", "name": "submit_analysis"},  # ← clave
     messages=[{"role": "user", "content": issue_text}]

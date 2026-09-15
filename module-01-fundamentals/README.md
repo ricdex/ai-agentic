@@ -4,6 +4,17 @@
 
 ---
 
+## Paso a paso
+
+1. Ejecutá `examples/01_hello_agent.py` y seguí cada llamada de herramienta.
+2. Identificá objetivo, observación, acción y criterio de parada en el output.
+3. Añadí una sola herramienta segura o cambiá una pregunta; verificá que el agente no invente información.
+4. Ejecutá `02_tool_use.py` para comparar una finalización explícita. Dejá memoria para el final: es una capacidad opcional, no el punto de partida.
+
+**Objetivo al terminar:** poder diseñar un loop mínimo con límite de iteraciones y herramientas de alcance acotado.
+
+---
+
 ## 1.1 ¿Qué es un agente de verdad?
 
 ### La distinción que importa
@@ -158,7 +169,7 @@ messages = [{"role": "user", "content": "¿Qué hace la función main en src/app
 # 2. Loop hasta que el agente termine
 while True:
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=1024,
         tools=tools,
         messages=messages

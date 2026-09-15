@@ -43,7 +43,7 @@ def demo_without_streaming():
     start = time.time()
 
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=600,
         messages=[{"role": "user", "content": PROMPT}]
     )
@@ -66,7 +66,7 @@ def demo_with_streaming():
     token_count = 0
 
     with client.messages.stream(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=600,
         messages=[{"role": "user", "content": PROMPT}]
     ) as stream:

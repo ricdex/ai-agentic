@@ -143,7 +143,7 @@ que aplican a esta tarea, aplicalas — no repitas los mismos errores."""
 
     for _ in range(10):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=1024,
             tools=TOOLS,
             messages=messages,

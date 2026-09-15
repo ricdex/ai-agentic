@@ -77,7 +77,7 @@ def triage_issue(title: str, body: str, repo: str) -> TriageResult:
 
 def generate_spec(title: str, body: str, approach: str) -> str:
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=2048,
         system=[{
             "type": "text",

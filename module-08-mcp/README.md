@@ -4,6 +4,17 @@
 
 ---
 
+## Paso a paso
+
+1. Ejecutá `examples/01_mcp_server.py` y listá una sola herramienta local.
+2. Ejecutá `02_mcp_client.py` para comprobar descubrimiento, llamada y resultado de esa herramienta.
+3. Documentá qué puede hacer, qué no puede hacer y con qué identidad se ejecuta.
+4. Añadí una integración externa solo después de imponer permisos mínimos, validación de input y trazas.
+
+**Complejidad a evitar:** instalar servidores MCP por moda o exponer filesystem, secretos y producción a un mismo agente.
+
+---
+
 ## 8.1 Qué es MCP y por qué importa
 
 MCP (Model Context Protocol) es un protocolo open-source de Anthropic que estandariza cómo los modelos de lenguaje se conectan a herramientas y fuentes de datos externas.

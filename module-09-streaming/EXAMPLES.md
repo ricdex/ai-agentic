@@ -139,7 +139,7 @@ def run_streaming_agent(task: str):
         first_token = None
 
         with client.messages.stream(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=600,
             tools=TOOLS,
             messages=messages

@@ -1,0 +1,60 @@
+# Feature Spec: [nombre breve]
+
+**Estado:** Borrador | Aprobada | Implementada
+**Fecha:** YYYY-MM-DD
+**Owner:** [persona responsable]
+**Contexto:** [link a issue, conversación o necesidad de negocio]
+
+---
+
+## Resultado de negocio
+
+> En una o dos frases: quién obtiene qué valor y cómo sabremos que ocurrió.
+
+[Ejemplo: Un operador puede reembolsar una orden elegible sin intervención de ingeniería y recibe confirmación en menos de un minuto.]
+
+## Alcance
+
+**Incluye:**
+- [comportamiento observable]
+
+**No incluye:**
+- [límite explícito para evitar sobre-construcción]
+
+## Reglas e invariantes
+
+- [regla de dominio que nunca puede romperse]
+- [regla de seguridad, permisos o auditoría]
+
+## Contrato observable
+
+Describe entradas, salidas, errores y eventos. No prescribas clases, tablas ni framework salvo que sea una restricción real.
+
+| Caso | Dado | Cuando | Entonces |
+|---|---|---|---|
+| Camino feliz | | | |
+| Regla de negocio | | | |
+| Error o borde | | | |
+
+## Criterios de aceptación
+
+- [ ] [resultado verificable por un usuario o sistema]
+- [ ] [resultado verificable por un test determinista]
+- [ ] [métrica, coste o latencia si aplica]
+
+## Riesgos y controles
+
+| Riesgo | Control | Evidencia esperada |
+|---|---|---|
+| Acción incorrecta del agente | permiso mínimo / aprobación humana | trace o registro de decisión |
+| Respuesta de baja calidad | eval con casos representativos | umbral documentado |
+
+## Plan de verificación
+
+- **Tests deterministas:** [comportamientos que deben cubrirse]
+- **Evals:** [dataset, métrica y umbral; usar “no aplica” con motivo si no hay LLM]
+- **Observabilidad:** [eventos, trace, alerta o dashboard]
+
+## Decisiones abiertas
+
+- [pregunta que debe resolverse antes de implementar]

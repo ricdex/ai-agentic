@@ -132,7 +132,7 @@ def answer(question: str) -> str:
     context = "\n\n---\n\n".join(context_parts)
 
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=1024,
         system=(
             "Respondé SOLO basándote en el contexto provisto. "

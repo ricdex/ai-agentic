@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Optional
+
 import redis
 
 QUEUE_IMPLEMENT = "factory:implement"
@@ -20,7 +20,7 @@ class QueueClient:
     def push(self, queue: str, data: dict) -> None:
         self.r.rpush(queue, json.dumps(data))
 
-    def pop(self, queue: str, timeout: int = 30) -> Optional[dict]:
+    def pop(self, queue: str, timeout: int = 30) -> dict | None:
         result = self.r.blpop(queue, timeout=timeout)
         if result:
             _, value = result
@@ -30,6 +30,6 @@ class QueueClient:
     def set_state(self, task_id: str, state: dict) -> None:
         self.r.setex(f"task:{task_id}", 86400, json.dumps(state))
 
-    def get_state(self, task_id: str) -> Optional[dict]:
+    def get_state(self, task_id: str) -> dict | None:
         value = self.r.get(f"task:{task_id}")
         return json.loads(value) if value else None

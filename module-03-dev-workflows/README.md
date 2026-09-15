@@ -1,6 +1,17 @@
 # Módulo 3 — Agentic Development Workflows
 
-> "El agente que más valor genera no es el que escribe mejor código — es el que cierra el loop desde el issue hasta el PR sin intervención humana."
+> "El agente que más valor genera no es el que escribe más código — es el que convierte una Feature Spec aprobada en un PR verificable, con gates humanos donde el riesgo lo exige."
+
+---
+
+## Paso a paso
+
+1. Usá una Feature Spec aprobada, no una issue ambigua, como entrada del workflow.
+2. Ejecutá `examples/issue_solver.py` en un repositorio de demo y observá exploración, tests, retry y diff.
+3. Compará el cambio con los criterios de aceptación: debe tocar el mínimo de archivos posible.
+4. Crea un PR solo cuando tests y criterios de la spec coincidan; si fallan, capturá el diagnóstico como evidencia.
+
+**Complejidad a evitar:** dar acceso de escritura o credenciales amplias antes de tener sandbox, tests y límite de reintentos.
 
 ---
 
@@ -99,14 +110,14 @@ En un dev agent, el system prompt y el contexto del repo son estáticos entre it
 ```python
 # Sin caching: cada iteración cuesta $X
 response = client.messages.create(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5",
     system="[2000 tokens de contexto del repo]",  # se procesa 5 veces
     messages=[...]
 )
 
 # Con caching: solo la primera vez cuesta $X
 response = client.messages.create(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5",
     system=[
         {
             "type": "text",

@@ -4,6 +4,17 @@
 
 ---
 
+## Paso a paso
+
+1. Clasificá la tarea: corta y stateless, larga y asíncrona, o persistente por evento.
+2. Ejecutá el ejemplo de Lambda para una entrada corta; revisá timeout, idempotencia y secretos.
+3. Para trabajo largo, elegí un job efímero/Cloud Run o worker en cola; no fuerces una Lambda más allá de sus límites.
+4. Escribí IaC, health checks, métricas y rollback antes de desplegar. Primero usa `plan`; nunca despliegues con aprobación automática.
+
+**Decisión por defecto:** serverless y servicios gestionados; servidores persistentes solo con una razón operativa documentada.
+
+---
+
 ## 11.1 El gap entre demo y producción
 
 Un agente funciona en local. ¿Qué falta para que funcione en producción?
@@ -250,12 +261,4 @@ Cuando funcione de punta a punta, tenés un sistema agéntico en producción rea
 
 ---
 
-**Fin del curso avanzado.**
-
-Recorriste:
-- Módulo 6: RAG y memoria semántica
-- Módulo 7: Structured outputs confiables
-- Módulo 8: MCP — el protocolo estándar
-- Módulo 9: Streaming para UX en producción
-- Módulo 10: Evals para mejorar sin adivinar
-- Módulo 11: Deployment real, no demos
+Siguiente: [Módulo 12 → Background Agents](../module-12-background-agents/README.md)

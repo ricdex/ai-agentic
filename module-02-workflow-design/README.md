@@ -4,6 +4,17 @@
 
 ---
 
+## Paso a paso
+
+1. Elegí una Feature Spec del módulo 0 y dibujá sus estados: inicio, verificación, éxito, fallo y escalamiento.
+2. Ejecutá `examples/feedback_loop.py`; observá qué dato decide un retry y cuándo termina.
+3. Añadí un gate humano para una acción irreversible.
+4. Recién después ejecutá `multi_agent.py`; usá múltiples agentes solo si un especialista reduce riesgo o tiempo de forma medible.
+
+**Complejidad a evitar:** un grafo grande o multi-agente sin criterio de evaluación, límite de reintentos y dueño de la decisión final.
+
+---
+
 ## 2.1 El problema del script lineal
 
 La mayoría de los intentos de "automatizar con AI" terminan siendo esto:

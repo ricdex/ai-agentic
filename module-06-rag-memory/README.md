@@ -4,6 +4,18 @@
 
 ---
 
+## Paso a paso
+
+1. Ejecutá `examples/01_embeddings_basic.py` y compará una búsqueda por palabras con similitud semántica.
+2. Ejecutá `02_rag_pipeline.py` con un conjunto pequeño de documentos; inspeccioná qué fragmentos se recuperan y por qué.
+3. Medí recuperación correcta antes de usar el contexto para generar una respuesta.
+4. Añadí `03_semantic_memory_agent.py` solo cuando el agente necesite aprender de interacciones previas.
+5. Cuando el volumen ya no entra en SQLite+numpy, migrá a `04_vector_store_pgvector.py` — mismo pipeline, pero corriendo la similitud como índice ANN en Postgres en vez de un loop en Python.
+
+**Complejidad a evitar:** introducir una base vectorial o memoria persistente sin una pregunta repetible que la búsqueda normal no resuelva.
+
+---
+
 ## 6.1 El límite de la memoria episódica con keywords
 
 En el módulo 1 implementamos memoria episódica con SQLite y búsqueda por keywords. Funciona para casos simples. Falla cuando:
@@ -105,7 +117,7 @@ Estrategias según el tipo de contenido:
 | **Qdrant** | Producción, alta escala, búsqueda avanzada | `docker run qdrant/qdrant` |
 | **Pinecone** | Managed, sin ops | API key |
 
-**Regla:** empezá con SQLite + numpy. Migrá a pgvector cuando tengas PostgreSQL en producción.
+**Regla:** empezá con SQLite + numpy. Migrá a pgvector cuando tengas PostgreSQL en producción — `examples/04_vector_store_pgvector.py` es esa migración corriendo, no solo el DDL.
 
 ---
 
@@ -149,6 +161,7 @@ El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md]
 | [01 — Embeddings básicos](./EXAMPLES.md#ejemplo-1--embeddings-básicos-texto--vector--similitud) | "problema con cobro" encuentra "Error al procesar pago Visa" (sim: 0.81) sin compartir palabras |
 | [02 — Pipeline RAG completo](./EXAMPLES.md#ejemplo-2--pipeline-rag-completo) | 5 docs indexados; preguntas fuera del dominio reciben "No tengo esa información" |
 | [03 — Memoria semántica de episodios](./EXAMPLES.md#ejemplo-3--agente-con-memoria-semántica-de-episodios-pasados) | Nueva tarea encuentra episodios relevantes de cupones y descuentos anteriores |
+| [04 — Vector store en pgvector](./EXAMPLES.md#ejemplo-4--vector-store-real-en-producción-pgvector) | El mismo RAG del ejemplo 02 corriendo contra Postgres+pgvector con índice `ivfflat` |
 
 ---
 

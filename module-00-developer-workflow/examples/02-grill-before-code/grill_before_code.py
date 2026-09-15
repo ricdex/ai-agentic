@@ -4,7 +4,7 @@ Módulo 0 — Grill Before Code
 El patrón que más ahorra tiempo en desarrollo con AI.
 
 Antes de escribir una línea de código, el agente te interroga hasta
-que el plan es sólido. Lo hace usando el contexto real del proyecto:
+que la Feature Spec es verificable. Lo hace usando el contexto real del proyecto:
 CONTEXT.md, CLAUDE.md y los ADRs — así las preguntas son específicas
 al dominio y las decisiones ya tomadas, no genéricas.
 
@@ -22,6 +22,7 @@ Uso (corré desde la raíz del proyecto):
     python path/to/grill_before_code.py
 """
 
+import re
 import sys
 import anthropic
 from dataclasses import dataclass, field
@@ -103,7 +104,7 @@ class GrillSession:
     context_files: dict[str, str] = field(default_factory=dict)
     questions_asked: int = 0
     answers: list = field(default_factory=list)
-    implementation_plan: str = ""
+    feature_spec: str = ""
     files_to_touch: list[str] = field(default_factory=list)
     tests_to_write: list[str] = field(default_factory=list)
     open_questions: list[str] = field(default_factory=list)
@@ -147,18 +148,20 @@ TOOLS = [
         }
     },
     {
-        "name": "submit_implementation_plan",
+        "name": "submit_feature_spec",
         "description": (
-            "Cuando tenés suficiente información, generá el plan de implementación. "
-            "El plan debe ser consistente con CONTEXT.md, CLAUDE.md y los ADRs del proyecto. "
+            "Cuando tenés suficiente información, generá una Feature Spec breve y verificable. "
+            "La spec debe ser consistente con CONTEXT.md, CLAUDE.md y los ADRs del proyecto. "
+            "Debe describir resultado, alcance, no-alcance, reglas, casos observables, "
+            "criterios de aceptación y plan de verificación; no debe prescribir implementación. "
             "Si la feature requiere una nueva decisión de arquitectura, indicalo como ADR pendiente."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
-                "plan": {
+                "spec_markdown": {
                     "type": "string",
-                    "description": "Plan detallado usando el lenguaje del dominio del proyecto (de CONTEXT.md)"
+                    "description": "Feature Spec completa en Markdown, usando el lenguaje del dominio. Incluye: Resultado de negocio, Alcance, No incluye, Reglas e invariantes, Contrato observable, Criterios de aceptación, Riesgos y controles, y Plan de verificación."
                 },
                 "files_to_create_or_modify": {
                     "type": "array",
@@ -175,13 +178,18 @@ TOOLS = [
                     "description": "Si la feature introduce una decisión de arquitectura nueva, describí el ADR a crear. Vacío si no aplica.",
                     "default": ""
                 },
+                "evals_to_run": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Evals, métricas y umbrales para validar una capacidad con LLM. Vacío si no aplica."
+                },
                 "open_questions": {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Decisiones que quedaron abiertas para resolver durante la implementación"
                 }
             },
-            "required": ["plan", "files_to_create_or_modify", "tests_to_write"]
+            "required": ["spec_markdown", "files_to_create_or_modify", "tests_to_write", "evals_to_run"]
         }
     }
 ]
@@ -230,7 +238,7 @@ Reglas críticas:
 - Hacé UNA pregunta a la vez, la más crítica primero
 - Para CADA pregunta proponé tu respuesta recomendada, justificada con el contexto
   del proyecto (el desarrollador puede aceptarla o corregirte)
-- Máximo {max_questions} preguntas — después generá el plan igual con lo que tenés
+- Máximo {max_questions} preguntas — después generá la Feature Spec igual con lo que tenés
 - NO preguntes sobre preferencias de estilo ni implementación obvia
 
 Tipos de preguntas valiosas (usando el contexto del proyecto):
@@ -245,7 +253,7 @@ Tipos de preguntas valiosas (usando el contexto del proyecto):
 
     for _ in range(max_questions + 3):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=2048,
             tools=TOOLS,
             messages=messages,
@@ -294,18 +302,18 @@ Tipos de preguntas valiosas (usando el contexto del proyecto):
                         "content": answer if answer else "(sin respuesta)"
                     })
 
-                elif block.name == "submit_implementation_plan":
+                elif block.name == "submit_feature_spec":
                     data = block.input
-                    session.implementation_plan = data["plan"]
+                    session.feature_spec = data["spec_markdown"]
                     session.files_to_touch = data.get("files_to_create_or_modify", [])
                     session.tests_to_write = data.get("tests_to_write", [])
                     session.open_questions = data.get("open_questions", [])
                     session.ready_to_implement = True
 
                     print(f"\n{'=' * 60}")
-                    print("PLAN DE IMPLEMENTACIÓN")
+                    print("FEATURE SPEC")
                     print("=" * 60)
-                    print(f"\n{data['plan']}")
+                    print(f"\n{data['spec_markdown']}")
 
                     if session.files_to_touch:
                         print("\nArchivos a crear/modificar:")
@@ -316,6 +324,11 @@ Tipos de preguntas valiosas (usando el contexto del proyecto):
                         print("\nTests a escribir:")
                         for t in session.tests_to_write:
                             print(f"  - {t}")
+
+                    if data.get("evals_to_run"):
+                        print("\nEvals a ejecutar:")
+                        for evaluation in data["evals_to_run"]:
+                            print(f"  - {evaluation}")
 
                     if data.get("adr_needed"):
                         print(f"\n⚠  ADR pendiente a crear:\n  {data['adr_needed']}")
@@ -328,7 +341,7 @@ Tipos de preguntas valiosas (usando el contexto del proyecto):
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
-                        "content": "Plan registrado."
+                        "content": "Feature Spec registrada."
                     })
 
             messages.append({"role": "user", "content": tool_results})
@@ -338,6 +351,17 @@ Tipos de preguntas valiosas (usando el contexto del proyecto):
 
     print(f"\n[Sesión completada: {session.questions_asked} preguntas | {len(context_files)} archivos de contexto usados]")
     return session
+
+
+def save_feature_spec(project_root: Path, feature_request: str, spec_markdown: str) -> Path:
+    """Guarda la spec como el contrato versionable de la feature."""
+    specs_dir = project_root / "specs"
+    specs_dir.mkdir(exist_ok=True)
+    next_number = len(list(specs_dir.glob("*.md"))) + 1
+    slug = re.sub(r"[^a-z0-9]+", "-", feature_request.lower()).strip("-")[:48] or "feature"
+    spec_path = specs_dir / f"{next_number:03d}-{slug}.md"
+    spec_path.write_text(spec_markdown.strip() + "\n")
+    return spec_path
 
 
 def main():
@@ -357,10 +381,12 @@ def main():
     session = run_grill_session(feature_request, project_root)
 
     if not session.ready_to_implement:
-        print("\n[El plan no fue generado — el agente no tuvo suficiente información]")
+        print("\n[La Feature Spec no fue generada — el agente no tuvo suficiente información]")
         sys.exit(1)
 
-    print(f"\nListo para implementar. Usá el plan de arriba como contexto para tu sesión de Claude Code.")
+    spec_path = save_feature_spec(project_root, feature_request, session.feature_spec)
+    print(f"\nFeature Spec guardada en {spec_path}")
+    print("Listo para implementar: derivá tests y el mínimo código necesario desde esta spec.")
 
 
 if __name__ == "__main__":

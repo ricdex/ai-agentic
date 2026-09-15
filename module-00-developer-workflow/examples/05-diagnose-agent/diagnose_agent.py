@@ -286,7 +286,7 @@ def run_phase(phase: Phase, state: DiagnoseState, extra_context: str = "") -> st
 
     for _ in range(10):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=4096,
             tools=tools,
             messages=messages,

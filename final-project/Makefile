@@ -1,4 +1,4 @@
-.PHONY: up down logs tunnel test-issue
+.PHONY: up down logs tunnel test-issue plan lint test coverage
 
 up:
 	docker compose up --build -d
@@ -21,6 +21,16 @@ test-issue:
 		--title "$(TITLE)" \
 		--body "$(BODY)"
 
-# Deploy to cloud VMs
-deploy:
-	cd infra && terraform apply -auto-approve
+# Review the legacy VM prototype without changing cloud resources.
+plan:
+	cd infra && terraform plan
+
+lint:
+	ruff check shared/
+
+# Mismo comando que corre CI (.github/workflows/ci.yml). Falla si la
+# cobertura de shared/ baja del 80% definido en pyproject.toml.
+test:
+	pytest shared/tests --cov=shared --cov-report=term-missing
+
+coverage: test

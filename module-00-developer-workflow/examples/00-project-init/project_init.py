@@ -307,7 +307,7 @@ def run_agent_loop(system: str, tools: list, initial_message: str, write_handler
 
     for _ in range(12):
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=8192,
             tools=tools,
             messages=messages,
@@ -362,7 +362,7 @@ def run_agent_loop(system: str, tools: list, initial_message: str, write_handler
                     messages.append({"role": "user", "content": tool_results})
                     # Una vuelta más para el resumen final
                     resp2 = client.messages.create(
-                        model="claude-sonnet-4-6",
+                        model="claude-sonnet-5",
                         max_tokens=512,
                         tools=tools,
                         messages=messages,
