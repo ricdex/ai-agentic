@@ -33,3 +33,31 @@ make test    # pytest + cobertura; falla si baja de 80% (pyproject.toml)
 ```
 
 CI (`.github/workflows/ci.yml`) corre lo mismo en cada push/PR, además de un chequeo de sintaxis sobre los `examples/` de todos los módulos (no ejecuta las llamadas reales a Claude, solo detecta código roto).
+
+### Tests de los ejemplos de módulos
+
+Algunos ejemplos separan la lógica pura (patrones de agente, context engineering, retrieval, guardrails) de las llamadas a Claude, y tienen tests unitarios que corren **sin red ni API key** usando LLMs y clientes falsos:
+
+| Ejemplo | Tests |
+|---|---|
+| `module-02-workflow-design/examples/agent_patterns.py` | `module-02-workflow-design/tests/` |
+| `module-03-dev-workflows/examples/context_manager.py` | `module-03-dev-workflows/tests/` |
+| `module-05-production/examples/guardrails.py` | `module-05-production/tests/` |
+| `module-06-rag-memory/examples/05_advanced_retrieval.py`, `06_agentic_rag.py` | `module-06-rag-memory/tests/` |
+
+Desde la raíz del repo:
+
+```bash
+pip install anthropic pytest pytest-cov
+pytest                                      # todos (config en pytest.ini)
+pytest --cov --cov-report=term-missing      # + cobertura; falla si baja de 80% (.coveragerc)
+pytest module-06-rag-memory/tests -q        # un módulo
+```
+
+Al agregar tests para otro ejemplo: sumá su carpeta `tests/` a `testpaths` en `pytest.ini` y el archivo a `include` en `.coveragerc`.
+
+### Troubleshooting
+
+- `ModuleNotFoundError` al importar un ejemplo desde un test: cada `tests/conftest.py` agrega su `examples/` al `sys.path`. Los archivos que empiezan con número se importan con `importlib.import_module("05_advanced_retrieval")`.
+- `import file mismatch` entre módulos: `pytest.ini` usa `--import-mode=importlib`; no lo quites.
+

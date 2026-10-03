@@ -458,3 +458,69 @@ cuando `amount` es `None`, lanzando `TypeError: '<' not supported between NoneTy
 ---
 
 Ver el [README principal](./README.md) para el workflow completo y la estrategia de selección de modelos.
+
+---
+
+## Ejemplo 4 — Context engineering: recortar, ordenar, limpiar, compactar
+
+**Archivo:** `examples/context_manager.py` · **Tests:** `tests/test_context_manager.py`
+
+Implementa las cuatro palancas de la [sección 3.7](./README.md#37-context-engineering-el-contexto-es-un-recurso-finito). La lógica de decisión es pura y testeable sin API key; solo `run_turn` llama a Claude (y recibe el cliente por parámetro).
+
+```python
+policy = ContextPolicy(window_tokens=200_000)   # umbrales: 40% / 70% / 90%
+
+def run_turn(client, messages, policy, tools=None):
+    action = policy.decide(estimate_tokens(messages))
+    if action == "handoff":
+        return None, action                       # el caller arranca sesión nueva
+    extra = context_management_for(action)        # {} | context editing | compaction
+    ...
+    messages.append({"role": "assistant", "content": response.content})
+    return response, action
+```
+
+**Output esperado** (pasos 1–3 son deterministas; el 4 depende del modelo):
+
+```
+1) Recorte de un log de CI de 50k caracteres
+   9763 → 500 tokens estimados
+   ¿Conserva el error? True
+
+2) Orden para la atención
+   ['doc1', 'doc3', 'doc5', 'doc4', 'doc2']
+
+3) Política por uso de contexto (ventana 200k)
+     20000 tokens → ok
+     90000 tokens → clear_tool_results
+    150000 tokens → compact
+    185000 tokens → handoff
+
+4) Turno real con Claude
+   acción=ok  →  Decidir qué información entra en la ventana del modelo, en qué orden y cuándo sale.
+
+5) Handoff para una sesión nueva
+
+# Handoff
+
+**Objetivo:** Arreglar el cálculo de descuentos en checkout
+
+## Hecho
+- Reproducido el bug con test_checkout_discount
+
+## Pendiente (en orden)
+- Corregir redondeo en apply_discount()
+- Correr suite completa
+
+## Decisiones tomadas (no re-discutir)
+- Usar Decimal, no float, para montos
+
+## Archivos tocados
+- src/checkout/discounts.py
+```
+
+**Qué muestra:**
+- El recorte cabeza + cola baja el log un 95% y conserva la línea `FAIL` (al final del log).
+- `order_for_attention` deja `doc1` y `doc2` (los más relevantes) en los extremos y manda `doc5` al medio.
+- La política escala de la acción más barata a la más cara a medida que crece el contexto.
+- El handoff es estado estructurado: la sesión nueva sabe qué **no** volver a discutir.

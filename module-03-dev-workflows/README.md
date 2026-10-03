@@ -163,6 +163,64 @@ El agente analiza el log de CI fallido, identifica el problema, escribe el fix, 
 
 ---
 
+## 3.7 Context engineering: el contexto es un recurso finito
+
+Un agente que resuelve un issue real hace decenas de llamadas a herramientas. Cada `read_file`, cada log de tests y cada diff se queda en el historial y **se reenvía en cada turno**. El modelo no falla porque "no entiende", sino porque el contexto se llenó de ruido:
+
+- **Costo y latencia:** el turno 40 paga todos los tokens de los 39 anteriores (el prompt caching lo atenúa, pero no lo elimina).
+- **Atención degradada:** los modelos usan peor la información enterrada en el medio de un contexto largo que la que está al principio o al final (*lost in the middle*).
+- **Límite duro:** al llegar a la ventana, el request falla.
+
+*Prompt engineering* es elegir las palabras de una instrucción. *Context engineering* es decidir **qué entra en la ventana, en qué orden y cuándo sale**. En agentes largos, lo segundo pesa más.
+
+### Las cuatro palancas, de la más barata a la más cara
+
+| # | Palanca | Cuándo | Dónde se aplica |
+|---|---|---|---|
+| 1 | **Recortar lo que entra** — cabeza + cola de logs, `grep` en vez de `read_file` completo, paginar | Siempre | En el tool, antes de devolver el `tool_result` |
+| 2 | **Ordenar para la atención** — lo más relevante al principio y al final | Al armar contexto con muchos documentos (RAG, archivos) | Al construir el prompt |
+| 3 | **Limpiar tool results viejos** (*context editing*) | El historial crece con resultados que ya no se van a releer | Server-side: `clear_tool_uses_20250919` |
+| 4 | **Compactar o hacer handoff** | Cerca del límite de la ventana | Server-side: compaction · o cortar y arrancar una sesión nueva con estado |
+
+```python
+# Palanca 3: el API vacía los tool results viejos antes de que el modelo los vea
+response = client.beta.messages.create(
+    model="claude-opus-5-5",
+    max_tokens=16_000,
+    betas=["context-management-2025-06-27"],
+    context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
+    tools=tools,
+    messages=messages,
+)
+
+# Palanca 4: compaction — el API resume el historial temprano
+response = client.beta.messages.create(
+    model="claude-opus-5-5",
+    max_tokens=16_000,
+    betas=["compact-2026-01-12"],
+    context_management={"edits": [{"type": "compact_20260112"}]},
+    messages=messages,
+)
+messages.append({"role": "assistant", "content": response.content})  # content completo, no solo el texto
+```
+
+**No edites el historial a mano.** Borrar o reescribir mensajes viejos de tu lista `messages` invalida el prompt caching desde ese punto y, en los modelos con *preserved thinking* (Opus 5.5, Fable 5.1), invalida los bloques de thinking posteriores. Tratá el historial como append-only: recortá **antes** de agregar (palanca 1) y dejá que el servidor limpie o compacte (palancas 3 y 4). El context editing acepta umbrales (cuándo disparar, cuántos tool uses conservar); ver la [documentación de context management](https://platform.claude.com/docs/en/build-with-claude/context-editing).
+
+### Handoff: cuando conviene empezar de cero
+
+La compaction resume, y un resumen libre pierde detalles. Para tareas de horas, el patrón más robusto es que el agente mantenga un **estado explícito** (objetivo, hecho, pendiente, decisiones, archivos tocados) y que, al acercarse al límite, arranque una sesión nueva cuyo primer mensaje sea ese estado. Es el mismo principio del [Paso 06 — Agent Handoff](../module-00-developer-workflow/README.md#paso-06--agent-handoff) del módulo 0, pero automático.
+
+```
+uso de contexto:   0% ──── 40% ──── 70% ──── 90% ── 100%
+acción:              ok   │ limpiar │ compactar │ handoff
+```
+
+Los umbrales son configuración, no constantes: dependen del modelo, del tamaño típico de tus tool outputs y de cuánto cuesta perder detalle.
+
+> **Regla práctica:** si tu agente necesita compaction en casi todas las tareas, el problema suele estar en la palanca 1 (tools que devuelven demasiado), no en la 4.
+
+---
+
 ## Ejemplos con output
 
 El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md](./EXAMPLES.md):
@@ -172,6 +230,7 @@ El código completo y el output esperado de cada ejemplo están en [EXAMPLES.md]
 | [01 — Issue solver](./EXAMPLES.md#ejemplo-1--issue-solver-de-github-issue-a-código) | Agente explora repo, encuentra bug, escribe fix, verifica con tests |
 | [02 — Prompt caching comparison](./EXAMPLES.md#ejemplo-2--prompt-caching-costo-con-y-sin-caché) | 72% de ahorro en costo con `cache_control`, mismo resultado |
 | [03 — CI/CD agéntico](./EXAMPLES.md#ejemplo-3--cicd-agéntico-fix-automático-cuando-falla-el-pipeline) | GitHub Actions workflow que abre PR automático cuando CI falla |
+| [04 — Context engineering](./EXAMPLES.md#ejemplo-4--context-engineering-recortar-ordenar-limpiar-compactar) | Log de 9.7k tokens recortado a 500 sin perder el error; política ok → limpiar → compactar → handoff |
 
 ---
 

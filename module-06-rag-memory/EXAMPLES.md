@@ -427,3 +427,90 @@ Respuesta: No tengo esa información en el contexto indexado.
 ---
 
 Ver el [README principal](./README.md) para los conceptos de embeddings, chunking y opciones de vector stores.
+
+---
+
+## Ejemplo 5 — Retrieval avanzado: hybrid, rerank, HyDE, caché semántica
+
+**Archivo:** `examples/05_advanced_retrieval.py` · **Tests:** `tests/test_advanced_retrieval.py`
+
+Cuatro técnicas en Python puro. Cada una recibe sus dependencias (embedder, LLM) por parámetro, así los tests corren sin red con un embedder falso.
+
+```python
+hybrid = HybridRetriever(DEMO_DOCS, embed)          # BM25 + dense, fusionados con RRF
+candidates = [(d, DEMO_DOCS[d]) for d, _ in hybrid.search(question, 5)]
+top = rerank(question, candidates, llm_scorer(client))   # Haiku puntúa los 5 en una llamada
+
+cache = SemanticCache(embed, threshold=0.85)
+cache.put("¿Dónde se guardan los secretos?", "En AWS Secrets Manager.")
+cache.get("¿Dónde se almacenan los secretos?")      # → hit, sin llamar al LLM
+```
+
+**Output esperado** (ilustrativo: los rankings dense, los puntajes y el texto de HyDE dependen del modelo de embeddings y del LLM):
+
+```
+Query: 'qué pasa con ERR_402'
+
+Solo dense : ['pagos-general', 'deploy', 'pagos-errores']
+Solo BM25  : ['pagos-errores']
+Hybrid RRF : ['pagos-errores', 'pagos-general', 'deploy']
+
+Rerank para '¿Dónde se guardan las API keys de prod?':
+  10.0  secretos
+   2.0  deploy
+   1.0  pagos-general
+
+HyDE query:
+  ¿Dónde se guardan las API keys de prod?
+  Las API keys y demás credenciales de producción se almacenan en AWS Secrets Manager...
+
+cache.get('¿Dónde se almacenan los secretos?') → En AWS Secrets Manager.
+
+cache.get('¿Cómo se despliega el webhook?') → None
+hits=1 misses=1
+```
+
+**Qué muestra:**
+- El modelo de embeddings no "entiende" `ERR_402`: el dense pone el documento correcto tercero. BM25 lo encuentra primero, y RRF lo mantiene arriba sin perder los resultados semánticos.
+- El reranker distingue "habla de pagos" de "responde dónde están las keys".
+- La caché acierta con una paráfrasis y no responde una pregunta distinta.
+
+---
+
+## Ejemplo 6 — Agentic RAG: el modelo decide qué buscar
+
+**Archivo:** `examples/06_agentic_rag.py` · **Tests:** `tests/test_agentic_rag.py`
+
+El loop de agente del Módulo 1 con una sola herramienta, `search_docs`, respaldada por el `HybridRetriever` del ejemplo 5.
+
+```python
+for _ in range(max_searches + 2):                    # cota dura de turnos
+    response = client.messages.create(model=MODEL, tools=[SEARCH_TOOL], ...)
+    if response.stop_reason != "tool_use":
+        return respuesta
+    for block in tool_use_blocks:
+        if len(result.queries) >= max_searches:
+            → tool_result con is_error=True: "Límite de búsquedas alcanzado..."
+        else:
+            → execute_search(...)                     # todos los resultados en UN mensaje
+```
+
+**Output esperado** (ilustrativo):
+
+```
+Q: ¿Qué pasa si un cobro falla con ERR_402 y dónde corre el servicio que lo procesa?
+   búsquedas: ['ERR_402 fondos insuficientes', 'dónde corre el servicio de pagos']
+   fuentes:   ['deploy', 'pagos-errores', 'pagos-general', 'redis', 'secretos']
+A: Ante un ERR_402 el sistema reintenta 3 veces con backoff exponencial y luego notifica
+   al usuario [pagos-errores]. El procesamiento corre en el agent core sobre ECS Fargate [deploy].
+
+Q: ¿Qué base de datos relacional usamos?
+   búsquedas: ['base de datos relacional', 'PostgreSQL MySQL base de datos']
+   fuentes:   ['deploy', 'pagos-general', 'redis', 'secretos']
+A: No está en la documentación. Solo encontré que los componentes se comunican vía colas en Redis [redis].
+```
+
+**Qué muestra:**
+- La pregunta compuesta se descompone en dos búsquedas que salen en paralelo, en el mismo turno.
+- Ante una pregunta fuera del corpus, el agente reformula una vez y después admite que no lo encontró, en vez de inventar.
+- `fuentes` incluye todo lo recuperado, no solo lo citado. Si querés auditar qué usó el modelo, parseá las citas `[id]` de la respuesta.

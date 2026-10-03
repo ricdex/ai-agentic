@@ -1,0 +1,13 @@
+# Cobertura de los ejemplos de módulos que tienen tests (ver pytest.ini).
+# Al agregar tests para otro ejemplo, sumalo a `include`.
+[run]
+include =
+    module-02-workflow-design/examples/agent_patterns.py
+    module-03-dev-workflows/examples/context_manager.py
+    module-05-production/examples/guardrails.py
+    module-06-rag-memory/examples/05_advanced_retrieval.py
+    module-06-rag-memory/examples/06_agentic_rag.py
+
+[report]
+fail_under = 80
+show_missing = true

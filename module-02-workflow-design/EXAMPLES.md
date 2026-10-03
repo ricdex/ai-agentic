@@ -331,3 +331,52 @@ Si hay inconsistencia entre archivos: el orquestador lo detecta
 ---
 
 Ver el [README principal](./README.md) para los patrones de diseño, human-in-the-loop y cuándo usar LangGraph.
+
+---
+
+## Ejemplo 3 — Patrones de agente: plan-and-execute, reflection, subagentes
+
+**Archivo:** `examples/agent_patterns.py` · **Tests:** `tests/test_agent_patterns.py`
+
+Los tres patrones de la [sección 2.7](./README.md#27-patrones-de-agente-elegir-por-la-falla-que-querés-evitar). La orquestación recibe el LLM como función `llm(system, prompt) -> str`, así los tests verifican la lógica (replan, rondas, aislamiento de fallos) con LLMs falsos.
+
+```python
+smart, cheap = claude_llm(client, MODEL), claude_llm(client, WORKER_MODEL)
+
+run = plan_and_execute(task, planner=smart, executor=cheap, max_replans=1)
+draft, verdicts = reflect(task, generator=cheap, evaluator=llm_judge(smart, rubric))
+report = orchestrate(goal, subtasks, orchestrator=smart, worker=cheap)
+```
+
+**Output esperado** (ilustrativo: los pasos y textos dependen del modelo):
+
+```
+=== 1. Plan-and-Execute ===
+  [ok] Identificar los atributos de un cupón (código, tipo, valor, vigencia, límites)
+  [ok] Definir tipos de datos y restricciones
+  [ok] Definir índices para las consultas frecuentes
+  [ok] Escribir el CREATE TABLE
+  status=done replans=0
+
+=== 2. Reflection ===
+  rondas=2 pasó=True
+  1. Idempotency key en cada cobro: un retry nunca cobra dos veces.
+  2. Timeout explícito de 10s por request.
+  3. Retries solo ante 429/5xx, con backoff exponencial y jitter.
+  4. Nunca loguear el número de tarjeta ni el token.
+  5. Tras 3 fallos, mandar a dead-letter queue y alertar.
+
+=== 3. Subagentes ===
+## Comparación
+| Cola | A favor | En contra |
+|---|---|---|
+| SQS | Serverless, DLQ nativa, sin operación | Sin orden estricto (salvo FIFO, con menos throughput) |
+| Redis Streams | Latencia baja, consumer groups | Hay que operar Redis y su persistencia |
+| Pub/Sub | Serverless, push a Cloud Run | Atado a GCP |
+
+Recomendación: SQS si el stack está en AWS...
+```
+
+**Qué muestra:**
+- En la primera ronda de reflection, el borrador del modelo barato no mencionaba timeouts. El juez (otro modelo, con rúbrica) lo marcó, y la revisión lo corrigió.
+- El orquestador solo recibe tres resúmenes, no la exploración de cada subagente. Si uno falla, aparece como `[FALLÓ]` en vez de romper el resto.

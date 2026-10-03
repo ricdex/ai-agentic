@@ -30,6 +30,25 @@ jobs:
       - name: Test + coverage gate (>= 80%, ver claude.md raíz)
         run: pytest shared/tests --cov=shared --cov-report=term-missing
 
+  module-examples-tests:
+    name: module examples (unit tests + coverage)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install anthropic pytest pytest-cov
+
+      # Lógica pura de los ejemplos (patrones, context engineering, retrieval,
+      # guardrails) testeada con LLMs/clientes falsos: sin red ni API key.
+      # Configuración en pytest.ini y .coveragerc (umbral 80%).
+      - name: Test + coverage gate (>= 80%)
+        run: pytest --cov --cov-report=term-missing
+
   examples-syntax-check:
     name: module examples (syntax check)
     runs-on: ubuntu-latest

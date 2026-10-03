@@ -94,14 +94,14 @@ No intentes leer todos los módulos ni ejecutar todos los scripts. Cada paso pro
 ```
 module-00-developer-workflow/ ← Setup, CONTEXT.md, TDD, diagnóstico, handoffs
 module-01-fundamentals/       ← Qué es un agente de verdad
-module-02-workflow-design/    ← Cómo diseñar loops y coordinación
-module-03-dev-workflows/      ← Agentes que mueven producto
+module-02-workflow-design/    ← Loops, coordinación, plan-and-execute, reflection, subagentes
+module-03-dev-workflows/      ← Agentes que mueven producto + context engineering
 module-04-runtime-adaptability/ ← Decisiones dinámicas en runtime
-module-05-production/         ← Observabilidad, costos, seguridad
+module-05-production/         ← Observabilidad, costos, seguridad y guardrails
 final-project/                ← Software Factory: Issue → Triage → Implement → Review → PR
 
 ── Avanzado ──────────────────────────────────────────────────────
-module-06-rag-memory/         ← RAG, embeddings, memoria semántica
+module-06-rag-memory/         ← RAG (hybrid, rerank, agentic), embeddings, memoria
 module-07-structured-outputs/ ← Schema enforcement, Pydantic, extracción
 module-08-mcp/                ← Model Context Protocol (estándar emergente)
 module-09-streaming/          ← Streaming, TTFT, SSE para frontend
